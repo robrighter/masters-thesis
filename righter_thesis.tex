@@ -1,0 +1,1587 @@
+%% ============================================================
+%%  Robert Righter – Master's Thesis [WIP]
+%%  AMS Style, Option A Notation
+%% ============================================================
+\documentclass{amsart}
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage[margin=1.25in]{geometry}
+\allowdisplaybreaks
+
+%% ------ Theorem-style Environments ------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+
+%% ------ Title Block ------
+\title{[Master's Thesis WIP]}
+\author{Robert Righter}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+%% ============================================================
+\section{Introduction}
+%% ============================================================
+
+Compound random variables have been studied extensively in probability theory and applied
+fields, as they provide a natural framework for modeling aggregate quantities subject to two
+layers of randomness: the distribution of the summands and the distribution of the count
+variable. Classical treatments can be found in
+\cite{TODO},
+where compound distributions are developed in the context of actuarial mathematics and
+discrete distributions.
+
+While the concept is straightforward, calculating the exact probability distribution of a
+compound random variable can be a significant computational challenge.  Direct methods
+involving multiple convolutions are often cumbersome and inefficient.  A more elegant and
+powerful approach is the use of recursive methods, which allow for the efficient calculation
+of the probability $P(S_N = k)$ based on the probabilities of preceding values.  This
+thesis explores one such recursive technique, which is particularly effective when the
+compounding distribution belongs to a specific class of distributions.
+
+The primary contribution of this work is the extension and simplification of this recursive
+method to the case where the compounding distribution is a finite mixture of Poisson,
+Binomial and Negative Binomial distributions.  A direct application of the recursive formula
+to this case leads to a computationally intensive, nested problem, where the mixing weights
+of the distribution must be recalculated at each step.  Additionally, we derive a
+closed-form expression that computes these recursive weights directly, thereby eliminating
+some of the nested recursion and simplifying the calculation.
+
+%% ============================================================
+\section{Background}
+%% ============================================================
+
+\begin{definition}
+The expected value of a discrete random variable, $X$, is denoted by $E(X)$, and given by
+\[
+    E[X] = \sum_{x=1}^{\infty} x \cdot f(x),
+\]
+where $f(x)$ is the probability mass function of $X$.
+\end{definition}
+
+\begin{definition}
+Let $X_1, X_2, \ldots, X_n$ be a sequence of independent and identically distributed random
+variables.  Let $N$ be a nonnegative integer valued random variable that is independent of
+the sequence $X_1, X_2, \ldots, X_n$.  Then,
+\[
+    S_N = \sum_{i=1}^{N} X_i
+\]
+is a \emph{compound random variable}.
+\end{definition}
+
+\begin{definition}
+In a compound random variable, the distribution of $N$ is called the \emph{compounding
+distribution}.
+\end{definition}
+
+\begin{theorem}[Compound Random Variable Identity]
+Let $M$ be a random variable that is independent of the sequence of random variables
+$X_1, X_2, \ldots, X_n$ that forms a compound random variable and $M$ satisfies
+\[
+    P(M = n) = \frac{n\, P(N = n)}{E[N]}, \qquad n = 1, 2, 3, \ldots
+\]
+Then, for any function $h$,
+\[
+    E\!\left(S_N \cdot h(S_N)\right) = E[N] \cdot E\!\left(X_1 \cdot h(S_M)\right).
+\]
+\end{theorem}
+
+\begin{proof}
+\begin{align*}
+E\!\left(S_N \cdot h(S_N)\right)
+    &= E\!\left[\sum_{i=1}^{N} X_i\, h(S_N)\right] \\
+    &= E\!\left[E\!\left(\sum_{i=1}^{N} X_i\, h(S_N) \;\Bigg|\; N = n\right)\right] \\
+    &= \sum_{n=0}^{\infty} E\!\left(\sum_{i=1}^{n} X_i\, h(S_n) \;\Bigg|\; N = n\right)
+       P(N = n) \\
+    &= \sum_{n=0}^{\infty} E\!\left(\sum_{i=1}^{n} X_i\, h(S_n)\right) P(N = n) \\
+    &= \sum_{n=0}^{\infty} \sum_{i=1}^{n} E\!\left(X_i\, h(S_n)\right) P(N = n).
+\end{align*}
+Since $X_1, X_2, \ldots$ are independent and identically distributed, we have
+\[
+    E\!\left(X_i \cdot h(S_N)\right) = E\!\left(X_j \cdot h(S_N)\right),
+    \qquad \forall\, i, j \in \{1, 2, \ldots, n\}.
+\]
+So,
+\begin{align*}
+E\!\left(S_N \cdot h(S_N)\right)
+    &= \sum_{n=0}^{\infty} \sum_{i=1}^{n} E\!\left(X_1\, h(S_n)\right) P(N = n) \\
+    &= \sum_{n=1}^{\infty} n \cdot E\!\left(X_1\, h(S_n)\right) P(N = n).
+\end{align*}
+Then, by substitution of $P(M = n) = \dfrac{n\,P(N=n)}{E[N]}$, we have
+\begin{align*}
+    &= \sum_{n=0}^{\infty} E[N] \cdot E\!\left(X_1\, h(S_n)\right) P(M = n) \\
+    &= E[N] \sum_{n=0}^{\infty} E\!\left(X_1\, h(S_n)\right) P(M = n) \\
+    &= E[N] \sum_{n=0}^{\infty} E\!\left(X_1\, h(S_n) \mid M = n\right) P(M = n) \\
+    &= E[N] \sum_{n=0}^{\infty} E\!\left(X_1\, h(S_M) \mid M = n\right) P(M = n) \\
+    &= E[N]\, E\!\left(E\!\left(X_1\, h(S_M) \mid M = n\right)\right) \\
+    &= E[N]\, E\!\left(X_1\, h(S_M)\right). \qedhere
+\end{align*}
+\end{proof}
+
+\begin{corollary}\label{cor:main}
+Let $S_N$ be a compound random variable and suppose $X_1, X_2, \ldots, X_n$ are positive
+integer valued random variables.  Suppose $P(X_1 = i) = \alpha_i$, $i > 0$, and $M$ is a
+random variable that is independent of the sequence $X_1, X_2, \ldots, X_n$ and satisfies
+\[
+    P(M = n) = \frac{n\,P(N = n)}{E[N]}.
+\]
+Then,
+\[
+    P(S_N = 0) = P(N = 0)
+    \quad \text{and} \quad
+    P(S_N = k) = \frac{1}{k}\, E[N] \sum_{i=1}^{k} i\,\alpha_i\, P(S_{M-1} = k - i).
+\]
+\end{corollary}
+
+\begin{proof}
+For a fixed $k$, let
+\[
+    h(x) = \begin{cases} 1 & \text{if } x = k, \\ 0 & \text{otherwise,} \end{cases}
+\]
+and note that
+\[
+    S_N \cdot h(S_N) = \begin{cases} k & \text{if } S_N = k, \\ 0 & \text{otherwise.} \end{cases}
+\]
+Therefore,
+\[
+    E\!\left(S_N \cdot h(S_N)\right) = k \cdot P(S_N = k).
+\]
+Now, by the Compound Random Variable Identity,
+$E(S_N \cdot h(S_N)) = E[N] \cdot E(X_1 \cdot h(S_M))$.  So,
+\begin{align*}
+k \cdot P(S_N = k)
+    &= E[N] \cdot E\!\left(X_1 \cdot h(S_M)\right) \\
+    &= E[N] \cdot E\!\left(E\!\left(X_1 \cdot h(S_M) \mid X_1 = j\right)\right) \\
+    &= E[N] \sum_{j=1}^{\infty} E\!\left(X_1 \cdot h(S_M) \mid X_1 = j\right)
+       \cdot P(X_1 = j) \\
+    &= E[N] \sum_{j=1}^{\infty} E\!\left(X_1 \cdot h(S_M) \mid X_1 = j\right)
+       \cdot \alpha_j \\
+    &= E[N] \sum_{j=1}^{\infty} E\!\left(j \cdot h(S_M) \mid X_1 = j\right) \cdot \alpha_j \\
+    &= E[N] \sum_{j=1}^{\infty} j \cdot E\!\left(h(S_M) \mid X_1 = j\right) \cdot \alpha_j.
+\end{align*}
+Now,
+\[
+    E\!\left(h(S_M) \mid X_1 = j\right)
+    = \sum_{S_M'} h(S_M')\, f_{S_M \mid X_1}(S_M' \mid j)
+    = P(S_M = k \mid X_1 = j).
+\]
+And,
+\begin{align*}
+P(S_M = k \mid X_1 = j)
+    &= P\!\left(\sum_{i=1}^{m} X_i = k \;\Bigg|\; X_1 = j\right) \\
+    &= P\!\left(j + \sum_{i=2}^{m} X_i = k\right)
+     = P\!\left(\sum_{i=2}^{m} X_i = k - j\right).
+\end{align*}
+Letting $\ell = i - 1$,
+\[
+    = P\!\left(\sum_{\ell=1}^{m-1} X_\ell = k - j\right) = P(S_{M-1} = k - j).
+\]
+So,
+\[
+    k \cdot P(S_N = k) = E[N] \sum_{j=1}^{\infty} j \cdot \alpha_j \cdot P(S_{M-1} = k - j).
+\]
+Note, when $j > k$, $P(S_{M-1} = k - j) = 0$.  So,
+\[
+    k \cdot P(S_N = k) = E[N] \sum_{j=1}^{k} j \cdot \alpha_j \cdot P(S_{M-1} = k - j),
+\]
+and therefore,
+\[
+    P(S_N = k) = \frac{1}{k} \cdot E[N] \sum_{j=1}^{k} j \cdot \alpha_j \cdot P(S_{M-1} = k - j).
+\]
+Notice, by definition, for $N \geq 1$,
+\[
+    P(S_N = 0) = P\!\left(\sum_{j=i}^{N} X_i = 0\right) = 0,
+\]
+so $P(S_N = 0) = P(N = 0)$.
+\end{proof}
+
+%% ============================================================
+\section{Examples}
+%% ============================================================
+
+For each of the distributions below, let $S_N = \sum_{i=1}^{N} X_i$ be a compound
+random variable where
+\[
+    P(X_1 = 1) = 0.05, \quad P(X_1 = 2) = 0.4, \quad P(X_1 = 3) = 0.1,
+\]
+\[
+    P(X_1 = 4) = 0.25, \quad P(X_1 = 5) = 0.2.
+\]
+Find $P(S_N = 4)$.
+
+%% ------ Example 1: Poisson ------
+\begin{example}[N in the Poisson Distribution]\label{ex:poisson}
+Let $N$ be a random variable of the Poisson distribution with parameter $\lambda = 3$.
+So the probability mass function for the distribution of $N$ is
+\[
+    P^{(s)}(N = n) = \frac{e^{-\lambda}\,\lambda^n}{n!}, \qquad n = 0, 1, 2, \ldots
+\]
+We claim that $E[N^{(s)}] = \lambda$.
+
+\begin{proof}
+\begin{align*}
+E[N^{(s)}]
+    &= \sum_{k=0}^{\infty} k \cdot \frac{e^{-\lambda}\,\lambda^k}{k!}
+     = 0 + \sum_{k=1}^{\infty} k \cdot \frac{e^{-\lambda}\,\lambda^k}{k!}
+     = \sum_{k=1}^{\infty} \frac{e^{-\lambda}\,\lambda^k}{(k-1)!} \\
+    &= e^{-\lambda} \cdot \lambda \cdot \sum_{k=1}^{\infty} \frac{\lambda^{k-1}}{(k-1)!}.
+\end{align*}
+Now let $j = k - 1$.  So when $k = 1$, $j = 0$, and as $k \to \infty$, $j \to \infty$.
+So,
+\[
+    E[N^{(s)}] = \lambda \cdot e^{-\lambda} \cdot \sum_{j=0}^{\infty} \frac{\lambda^j}{j!}.
+\]
+We recognize $\sum_{j=0}^{\infty} \tfrac{\lambda^j}{j!}$ as the Taylor series for $e^\lambda$.
+So,
+\[
+    E[N^{(s)}] = \lambda \cdot e^{-\lambda} \cdot e^{\lambda} = \lambda. \qedhere
+\]
+\end{proof}
+
+Therefore, $E[N^{(s)}] = \lambda = 3$.  So we have,
+\begin{align*}
+P(M^{(s)} - 1 = n)
+    &= P(M^{(s)} = n + 1)
+     = \frac{(n+1)\,P^{(s)}(N = n+1)}{E[N^{(s)}]} \\
+    &= \frac{n+1}{\lambda} \cdot \frac{e^{-\lambda}\,\lambda^{n+1}}{(n+1)!}
+     = \frac{e^{-\lambda}\,\lambda^n}{n!}.
+\end{align*}
+Therefore, we see that $P^{(s+1)}(N = n)$ is also the Poisson distribution with parameter
+$\lambda$.  Since the distribution is unchanged at each recursion level, we have
+\[
+    P^{(s)}(S_N = k) = \frac{\lambda}{k} \sum_{i=1}^{k} i\,\alpha_i \cdot P^{(s+1)}(S_N = k - i),
+\]
+which, because $P^{(s)} = P^{(s+1)}$ for all $s \geq 0$, simplifies to
+\[
+    P(S_N = k) = \frac{\lambda}{k} \sum_{i=1}^{k} i\,\alpha_i \cdot P(S_N = k - i).
+\]
+Now we calculate $P(S_N = 4)$.
+\begin{align*}
+P(S_N = 0)
+    &= P(N = 0) = \frac{e^{-\lambda}\,\lambda^0}{0!} = e^{-\lambda} = e^{-3}. \\
+P(S_N = 1)
+    &= \frac{3}{1}\bigl[1 \cdot (0.05) \cdot P(S_N = 0)\bigr]
+     = 3 \cdot (0.05) \cdot e^{-3}
+     = 0.15\,e^{-3}. \\
+P(S_N = 2)
+    &= \frac{3}{2}\bigl[(0.05) \cdot P(S_N = 1) + 2 \cdot (0.4) \cdot P(S_N = 0)\bigr] \\
+    &= \frac{3}{2}\bigl[(0.05)(0.15\,e^{-3}) + (0.8)\,e^{-3}\bigr]
+     = 1.21125\,e^{-3}. \\
+P(S_N = 3)
+    &= \frac{3}{3}\bigl[(0.05) \cdot P(S_N = 2) + (0.8) \cdot P(S_N = 1)
+       + 3 \cdot (0.1) \cdot P(S_N = 0)\bigr] \\
+    &= (0.05)(1.21125\,e^{-3}) + (0.8)(0.15\,e^{-3}) + (0.3)\,e^{-3}
+     = 0.4805625\,e^{-3}. \\
+P(S_N = 4)
+    &= \frac{3}{4}\bigl[0.05 \cdot P(S_N = 3) + 0.8 \cdot P(S_N = 2)
+       + 0.3 \cdot P(S_N = 1) + 4 \cdot (0.25) \cdot P(S_N = 0)\bigr] \\
+    &= \frac{3}{4}\bigl[0.05(0.4805625\,e^{-3}) + 0.8(1.21125\,e^{-3})
+       + 0.3(0.15\,e^{-3}) + e^{-3}\bigr] \\
+    &= 1.528521094\,e^{-3}.
+\end{align*}
+\end{example}
+
+%% ------ Example 2: Negative Binomial ------
+\begin{example}[N in the Negative Binomial Distribution]\label{ex:negbin}
+Let $N$ be a random variable of the negative binomial distribution with parameters
+$r = 6$ and $p = 0.6$.  The probability mass function for the distribution of $N^{(s)}$ at
+recursion level $s$ is
+\[
+    P^{(s)}(N = n) = \binom{n + r + s - 1}{n} p^{r+s}(1-p)^n, \qquad n \geq 0.
+\]
+We claim that $E[N^{(s)}] = \dfrac{(r+s)(1-p)}{p}$.
+
+\begin{proof}
+\begin{align*}
+E[N^{(s)}]
+    &= \sum_{k=0}^{\infty} k \binom{k + r + s - 1}{k} p^{r+s}(1-p)^k
+     = \sum_{k=1}^{\infty} k \binom{k + r + s - 1}{k} p^{r+s}(1-p)^k.
+\end{align*}
+Recalling that $\dbinom{a}{b} = \dfrac{a!}{b!\,(a-b)!}$, we see that
+\[
+    k \binom{k + r + s - 1}{k}
+    = k \cdot \frac{(k + r + s - 1)!}{k!\,(r + s - 1)!}
+    = \frac{(k + r + s - 1)!}{(k-1)!\,(r + s - 1)!}
+    = (r+s)\binom{k + r + s - 1}{k - 1}.
+\]
+So we have,
+\[
+    E[N^{(s)}]
+    = (r+s)(1-p)\,p^{r+s} \sum_{k=1}^{\infty}
+      \binom{k + r + s - 1}{k - 1}(1-p)^{k-1}.
+\]
+Let $m = k - 1$.  By substitution,
+\[
+    E[N^{(s)}] = (r+s)(1-p)\,p^{r+s}
+    \sum_{m=0}^{\infty} \binom{m + (r+s)}{m}(1-p)^m.
+\]
+Recalling the negative binomial theorem,
+$(1+x)^{-t} = \sum_{i=0}^{\infty}\binom{-t}{i} x^i$,
+and applying it, we see that
+\[
+    \sum_{m=0}^{\infty} \binom{m + r + s}{m}(1-p)^m = p^{-(r+s+1)}.
+\]
+So by substitution,
+\[
+    E[N^{(s)}]
+    = (r+s)(1-p)\,p^{r+s} \cdot p^{-(r+s+1)}
+    = \frac{(r+s)(1-p)}{p}. \qedhere
+\]
+\end{proof}
+
+So we have,
+\begin{align*}
+P^{(s)}(M^{(s)} - 1 = n)
+    &= P^{(s)}(M^{(s)} = n + 1) \\
+    &= \frac{(n+1)\,P^{(s)}(N = n+1)}{E[N^{(s)}]} \\
+    &= \binom{n + r + s}{n + 1} p^{r+s}(1-p)^{n+1}
+       \cdot \frac{(n+1)}{(r+s)(1-p)/p} \\
+    &= \frac{(n+1)\,p}{(r+s)(1-p)} \cdot \frac{(n + r + s)!}{(n+1)!\,(r+s-1)!}
+       \cdot p^{r+s}(1-p)^{n+1} \\
+    &= \frac{(n + r + s)!}{n!\,(r+s)!} \cdot p^{r+s+1}(1-p)^n \\
+    &= \binom{n + (r+s+1) - 1}{n} p^{r+s+1}(1-p)^n
+     = P^{(s+1)}(N = n).
+\end{align*}
+Therefore, we see that $P^{(s)}(M^{(s)} - 1 = n)$ is also the negative binomial
+distribution but at the next recursion level $(s+1)$.  So, we have
+\[
+    P^{(s)}(S_N = k)
+    = \frac{(r+s)(1-p)}{k\,p} \sum_{i=1}^{k} i\,\alpha_i \cdot P^{(s+1)}(S_N = k - i).
+\]
+Now we can begin the computation.  With $r = 6$, $p = 0.6$ (so $1-p = 0.4$), at level
+$s = 0$ the coefficient is $\dfrac{r(1-p)}{p} = 4$, giving
+\[
+    P^{(0)}(S_N = k) = \frac{4}{k} \sum_{i=1}^{k} i\,\alpha_i \cdot P^{(1)}(S_N = k - i).
+\]
+
+\medskip
+\noindent\textit{Base cases} $P^{(s)}(S_N = 0) = p^{r+s}$:
+\begin{align*}
+P^{(0)}(S_N = 0) &= (0.6)^{6} = 0.046656. \\
+P^{(1)}(S_N = 0) &= (0.6)^{7} = 0.0279936. \\
+P^{(2)}(S_N = 0) &= (0.6)^{8} = 0.01679616. \\
+P^{(3)}(S_N = 0) &= (0.6)^{9} = 0.010077696. \\
+P^{(4)}(S_N = 0) &= (0.6)^{10} = 0.0060466176.
+\end{align*}
+
+\medskip
+\noindent\textit{Computing} $P^{(s)}(S_N = 1)$:
+\begin{align*}
+P^{(0)}(S_N = 1)
+    &= \frac{(r)(1-p)}{1 \cdot p}\bigl[0.05 \cdot P^{(1)}(S_N = 0)\bigr]
+     = (0.2)(0.0279936)
+     = 0.00559872. \\
+P^{(1)}(S_N = 1)
+    &= \frac{(r+1)(1-p)}{1 \cdot p}\bigl[0.05 \cdot P^{(2)}(S_N = 0)\bigr]
+     = \tfrac{7 \cdot 0.4}{0.6}(0.05)(0.01679616)
+     = 0.003919104. \\
+P^{(2)}(S_N = 1)
+    &= \frac{(r+2)(1-p)}{1 \cdot p}\bigl[0.05 \cdot P^{(3)}(S_N = 0)\bigr]
+     = \tfrac{8 \cdot 0.4}{0.6}(0.05)(0.010077696)
+     = 0.0026873856. \\
+P^{(3)}(S_N = 1)
+    &= \frac{(r+3)(1-p)}{1 \cdot p}\bigl[0.05 \cdot P^{(4)}(S_N = 0)\bigr]
+     = \tfrac{9 \cdot 0.4}{0.6}(0.05)(0.0060466176)
+     = 0.00181398528.
+\end{align*}
+
+\medskip
+\noindent\textit{Computing} $P^{(s)}(S_N = 2)$:
+\begin{align*}
+P^{(1)}(S_N = 2)
+    &= \frac{(r+1)(1-p)}{2\,p}
+       \bigl[(0.05)\cdot P^{(2)}(S_N = 1) + (0.8)\cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{7 \cdot 0.4}{2 \cdot 0.6}
+       \bigl[(0.05)(0.0026873856) + (0.8)(0.01679616)\bigr]
+     = 0.03166636032. \\
+P^{(2)}(S_N = 2)
+    &= \frac{(r+2)(1-p)}{2\,p}
+       \bigl[(0.05)\cdot P^{(3)}(S_N = 1) + (0.8)\cdot P^{(3)}(S_N = 0)\bigr] \\
+    &= \frac{8 \cdot 0.4}{2 \cdot 0.6}
+       \bigl[(0.05)(0.00181398528) + (0.8)(0.010077696)\bigr]
+     = 0.021740949504.
+\end{align*}
+
+\medskip
+\noindent\textit{Computing} $P^{(1)}(S_N = 3)$:
+\begin{align*}
+P^{(1)}(S_N = 3)
+    &= \frac{(r+1)(1-p)}{3\,p}
+       \bigl[(0.05)\cdot P^{(2)}(S_N = 2) + (0.8)\cdot P^{(2)}(S_N = 1)
+       + (0.3)\cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{7 \cdot 0.4}{3 \cdot 0.6}
+       \bigl[(0.05)(0.021740949504) + (0.8)(0.0026873856)
+       + (0.3)(0.01679616)\bigr] \\
+    &= 0.01287347282.
+\end{align*}
+
+\medskip
+\noindent\textit{Computing} $P^{(0)}(S_N = 4)$:
+\begin{align*}
+P^{(0)}(S_N = 4)
+    &= \frac{r(1-p)}{4\,p}
+       \bigl[0.05 \cdot P^{(1)}(S_N = 3) + 0.8 \cdot P^{(1)}(S_N = 2)
+       + 0.3 \cdot P^{(1)}(S_N = 1) + P^{(1)}(S_N = 0)\bigr] \\
+    &= \frac{6 \cdot 0.4}{4 \cdot 0.6}
+       \bigl[(0.05)(0.01287347282) + (0.8)(0.03166636032) \\
+    &\qquad\qquad\quad + (0.3)(0.003919104) + 0.0279936\bigr] \\
+    &= \boxed{0.05514609310}.
+\end{align*}
+\end{example}
+
+%% ------ Example 3: Binomial ------
+\begin{example}[N in the Binomial Distribution]\label{ex:binom}
+Let $N$ be a random variable of the Binomial distribution with parameters $r = 6$ and
+$p = 0.6$.  The probability mass function for the distribution of $N^{(s)}$ at recursion
+level $s$ is
+\[
+    P^{(s)}(N = n) = \binom{r - s}{n} p^n (1-p)^{(r-s)-n},
+    \qquad n \geq 0.
+\]
+We claim that $E[N^{(s)}] = (r - s)\,p$.
+
+\begin{proof}
+\begin{align*}
+E[N^{(s)}]
+    &= \sum_{k=0}^{\infty} k \binom{r-s}{k} p^k (1-p)^{(r-s)-k}
+     = \sum_{k=1}^{\infty} k \binom{r-s}{k} p^k (1-p)^{(r-s)-k}.
+\end{align*}
+Notice that
+\[
+    k \binom{r-s}{k}
+    = k \cdot \frac{(r-s)!}{k!\,(r-s-k)!}
+    = \frac{(r-s)!}{(k-1)!\,(r-s-k)!}
+    = (r-s)\binom{r-s-1}{k-1}.
+\]
+By substitution,
+\[
+    E[N^{(s)}]
+    = (r-s)\,p \sum_{k=1}^{\infty} \binom{r-s-1}{k-1} p^{k-1}(1-p)^{(r-s)-k}.
+\]
+We let $m = k - 1$.  So we have,
+\[
+    E[N^{(s)}]
+    = (r-s)\,p \sum_{m=0}^{\infty}
+      \binom{r-s-1}{m} p^m (1-p)^{(r-s-1)-m}.
+\]
+And by the binomial theorem,
+\[
+    \sum_{m=0}^{\infty} \binom{r-s-1}{m} p^m (1-p)^{(r-s-1)-m}
+    = \bigl[p + (1-p)\bigr]^{r-s-1} = 1.
+\]
+By substitution we have $E[N^{(s)}] = (r-s)\,p$. \qedhere
+\end{proof}
+
+So, for this example at $s = 0$, $E[N^{(0)}] = r\,p = 3.6$.  We have,
+\begin{align*}
+P^{(s)}(M^{(s)} - 1 = n)
+    &= P^{(s)}(M^{(s)} = n + 1)
+     = \frac{(n+1)\,P^{(s)}(N = n + 1)}{E[N^{(s)}]} \\
+    &= \binom{r-s}{n+1} p^{n+1}(1-p)^{(r-s)-n-1}
+       \cdot \frac{n+1}{(r-s)\,p} \\
+    &= \frac{(r-s)!}{(n+1)!\,(r-s-n-1)!}\,p(1-p)^{(r-s-1)-n}
+       \cdot \frac{n+1}{(r-s)\,p} \\
+    &= \frac{(r-s-1)!}{n!\,(r-s-1-n)!} \cdot p^n (1-p)^{(r-s-1)-n} \\
+    &= \binom{r-s-1}{n} p^n (1-p)^{(r-s-1)-n}
+     = P^{(s+1)}(N = n).
+\end{align*}
+Therefore, we see that $P^{(s)}(M^{(s)} - 1 = n)$ is also the binomial distribution but at
+the next recursion level $(s + 1)$, which corresponds to a parameter change to $(r - s - 1)$.
+So, we have
+\[
+    P^{(s)}(S_N = k)
+    = \frac{(r-s)\,p}{k} \sum_{i=1}^{k} i\,\alpha_i \cdot P^{(s+1)}(S_N = k - i).
+\]
+Now we can begin the computation to find $P(S_N = 4)$.
+
+\medskip
+\noindent\textit{Base cases} $P^{(s)}(S_N = 0) = (1-p)^{r-s}$:
+\begin{align*}
+P^{(1)}(S_N = 0) &= P^{(1)}(N = 0) = (0.4)^5 = 0.01024. \\
+P^{(2)}(S_N = 0) &= P^{(2)}(N = 0) = (0.4)^4 = 0.0256. \\
+P^{(3)}(S_N = 0) &= P^{(3)}(N = 0) = (0.4)^3 = 0.064.
+\end{align*}
+
+\medskip
+\noindent
+From Corollary~\ref{cor:main}, $P^{(0)}(S_N = 0) = P^{(0)}(N = 0) = (0.4)^6 = 0.004096$.
+
+\begin{align*}
+P^{(0)}(S_N = 1)
+    &= \frac{r\,p}{1}\bigl[1 \cdot (0.05) \cdot P^{(1)}(S_N = 0)\bigr]
+     = 6(0.6)(0.05)(0.01024) = 0.0018432. \\
+P^{(3)}(S_N = 1)
+    &= \frac{(r-3)\,p}{1}\bigl[0.05 \cdot P^{(4)}(S_N = 0)\bigr]
+     = 3(0.6)(0.05)(0.4)^2 = 0.0144. \\
+P^{(2)}(S_N = 1)
+    &= \frac{(r-2)\,p}{1}\bigl[0.05 \cdot P^{(3)}(S_N = 0)\bigr]
+     = 4(0.6)(0.05)(0.064) = 0.00768. \\
+P^{(1)}(S_N = 1)
+    &= \frac{(r-1)\,p}{1}\bigl[0.05 \cdot P^{(2)}(S_N = 0)\bigr]
+     = 5(0.6)(0.05)(0.0256) = 0.00384.
+\end{align*}
+
+\begin{align*}
+P^{(2)}(S_N = 2)
+    &= \frac{(r-2)\,p}{2}
+       \bigl[0.05 \cdot P^{(3)}(S_N = 1) + 0.8 \cdot P^{(3)}(S_N = 0)\bigr] \\
+    &= \frac{4(0.6)}{2}\bigl[0.05(0.0144) + 0.8(0.064)\bigr]
+     = 0.062304. \\
+P^{(1)}(S_N = 2)
+    &= \frac{(r-1)\,p}{2}
+       \bigl[0.05 \cdot P^{(2)}(S_N = 1) + 0.8 \cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{5(0.6)}{2}\bigl[0.05(0.00768) + 0.8(0.0256)\bigr]
+     = 0.031296.
+\end{align*}
+
+\begin{align*}
+P^{(1)}(S_N = 3)
+    &= \frac{(r-1)\,p}{3}
+       \bigl[(0.05)\cdot P^{(2)}(S_N = 2) + (0.8)\cdot P^{(2)}(S_N = 1)
+       + (0.3)\cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{5(0.6)}{3}
+       \bigl[(0.05)(0.062304) + (0.8)(0.00768) + (0.3)(0.0256)\bigr]
+     = 0.016937200.
+\end{align*}
+
+\begin{align*}
+P^{(0)}(S_N = 4)
+    &= \frac{r\,p}{4}
+       \bigl[0.05 \cdot P^{(1)}(S_N = 3) + 0.8 \cdot P^{(1)}(S_N = 2)
+       + 0.3 \cdot P^{(1)}(S_N = 1) + P^{(1)}(S_N = 0)\bigr] \\
+    &= \frac{6(0.6)}{4}
+       \bigl[(0.05)(0.016937200) + (0.8)(0.031296)
+       + (0.3)(0.00384) + 0.01024\bigr] \\
+    &= \boxed{0.033548184}.
+\end{align*}
+\end{example}
+
+%% ============================================================
+\section{Computation with a Finite Mixture of Poisson Distributions}
+%% ============================================================
+
+We will now consider the computation of compound random variable probabilities when the
+counting distribution is a mixture of Poisson distributions.
+
+\begin{example}[N in a Finite Mixture of Two Poisson Distributions]\label{ex:poisson-mix}
+Consider a discrete mixture distribution where the event is generated by one of two random
+processes.  The event is either generated by process one, which follows a Poisson
+distribution with mean $\lambda_1$, or process two, which follows a Poisson distribution
+with mean $\lambda_2$.  The probability of process one is $\beta_1$, and the probability of
+process two is $\beta_2$, where $\beta_1 + \beta_2 = 1$.  Let the parameters of this
+distribution be $\lambda_1, \lambda_2, \beta_1, \beta_2$.
+
+So, we have,
+\[
+    P^{(s)}(N = n)
+    = \beta_1^{(s)} \cdot \frac{e^{-\lambda_1}\,\lambda_1^n}{n!}
+    + \beta_2^{(s)} \cdot \frac{e^{-\lambda_2}\,\lambda_2^n}{n!},
+    \qquad n = 0, 1, 2, \ldots
+\]
+We claim that $E[N^{(s)}] = \beta_1^{(s)}\lambda_1 + \beta_2^{(s)}\lambda_2$.
+
+\begin{proof}
+\begin{align*}
+E[N^{(s)}]
+    &= \sum_{k=0}^{\infty} k \left[\beta_1^{(s)} \cdot
+       \frac{e^{-\lambda_1}\,\lambda_1^k}{k!}
+       + \beta_2^{(s)} \cdot \frac{e^{-\lambda_2}\,\lambda_2^k}{k!}\right] \\
+    &= \beta_1^{(s)} \sum_{k=0}^{\infty} k \cdot \frac{e^{-\lambda_1}\,\lambda_1^k}{k!}
+     + \beta_2^{(s)} \sum_{k=0}^{\infty} k \cdot \frac{e^{-\lambda_2}\,\lambda_2^k}{k!}.
+\end{align*}
+Recall from Example~\ref{ex:poisson} that we showed
+$\sum_{k=0}^{\infty} k \cdot \dfrac{e^{-\lambda_i}\,\lambda_i^k}{k!} = \lambda_i$.
+So, by substitution we have $E[N^{(s)}] = \beta_1^{(s)}\lambda_1 + \beta_2^{(s)}\lambda_2$.
+\qedhere
+\end{proof}
+
+So, we have,
+\begin{align*}
+P(M^{(s)} - 1 = n)
+    &= P(M^{(s)} = n + 1)
+     = \frac{(n+1)\,P^{(s)}(N = n+1)}{E[N^{(s)}]} \\
+    &= \frac{(n+1)\!\left[\beta_1^{(s)} \cdot \dfrac{e^{-\lambda_1}\lambda_1^{n+1}}{(n+1)!}
+       + \beta_2^{(s)} \cdot \dfrac{e^{-\lambda_2}\lambda_2^{n+1}}{(n+1)!}\right]}
+      {\beta_1^{(s)}\lambda_1 + \beta_2^{(s)}\lambda_2} \\
+    &= \frac{\beta_1^{(s)}\lambda_1 \cdot \dfrac{e^{-\lambda_1}\lambda_1^n}{n!}
+       + \beta_2^{(s)}\lambda_2 \cdot \dfrac{e^{-\lambda_2}\lambda_2^n}{n!}}
+      {\beta_1^{(s)}\lambda_1 + \beta_2^{(s)}\lambda_2} \\
+    &= \frac{\beta_1^{(s)}\lambda_1}{\beta_1^{(s)}\lambda_1 + \beta_2^{(s)}\lambda_2}
+       \cdot \frac{e^{-\lambda_1}\lambda_1^n}{n!}
+     + \frac{\beta_2^{(s)}\lambda_2}{\beta_1^{(s)}\lambda_1 + \beta_2^{(s)}\lambda_2}
+       \cdot \frac{e^{-\lambda_2}\lambda_2^n}{n!}.
+\end{align*}
+Notice, this is also a finite mixture distribution where both processes follow the Poisson
+distribution with $\lambda_1, \lambda_2$ respectively.  However, we have updated values for
+$\beta_1^{(s)}$ and $\beta_2^{(s)}$.  The weight update rule is
+\[
+    \beta_j^{(s+1)}
+    = \frac{\beta_j^{(s)}\,\lambda_j}{\beta_1^{(s)}\lambda_1 + \beta_2^{(s)}\lambda_2}.
+\]
+So, we have
+\[
+    P^{(s)}(S_N = k)
+    = \frac{E[N^{(s)}]}{k} \sum_{i=1}^{k} i\,\alpha_i \cdot P^{(s+1)}(S_N = k - i).
+\]
+Now we can begin the computation.  Let $\lambda_1 = 3$, $\lambda_2 = 4$,
+$\beta_1^{(0)} = 0.6$, $\beta_2^{(0)} = 0.4$.  We want to find $P^{(0)}(S_N = 4)$.
+
+\medskip
+\noindent\textit{Computing the mixing weights at each level}:
+\begin{align*}
+\beta_1^{(0)} &= 0.6, \quad \beta_2^{(0)} = 0.4, \quad
+E[N^{(0)}] = (0.6)(3) + (0.4)(4) = 3.4. \\
+\beta_1^{(1)} &= \frac{(0.6)(3)}{3.4} = \frac{1.8}{3.4}, \quad
+\beta_2^{(1)} = \frac{(0.4)(4)}{3.4} = \frac{1.6}{3.4}, \quad
+E[N^{(1)}] = \frac{1.8(3) + 1.6(4)}{3.4} = \frac{11.8}{3.4}. \\
+\beta_1^{(2)} &= \frac{5.4}{11.8}, \quad \beta_2^{(2)} = \frac{6.4}{11.8}, \quad
+E[N^{(2)}] = \frac{5.4(3) + 6.4(4)}{11.8} = \frac{41.8}{11.8}. \\
+\beta_1^{(3)} &= \frac{16.2}{41.8}, \quad \beta_2^{(3)} = \frac{25.6}{41.8}, \quad
+E[N^{(3)}] = \frac{16.2(3) + 25.6(4)}{41.8} = \frac{151}{41.8}. \\
+\beta_1^{(4)} &= \frac{48.6}{151}, \quad \beta_2^{(4)} = \frac{102.4}{151}.
+\end{align*}
+
+\medskip
+\noindent\textit{Base cases} $P^{(s)}(S_N = 0) = \beta_1^{(s)}e^{-\lambda_1}
++ \beta_2^{(s)}e^{-\lambda_2}$:
+\begin{align*}
+P^{(1)}(S_N = 0) &= \tfrac{1.8}{3.4}\,e^{-3} + \tfrac{1.6}{3.4}\,e^{-4}. \\
+P^{(2)}(S_N = 0) &= \tfrac{5.4}{11.8}\,e^{-3} + \tfrac{6.4}{11.8}\,e^{-4}. \\
+P^{(3)}(S_N = 0) &= \tfrac{16.2}{41.8}\,e^{-3} + \tfrac{25.6}{41.8}\,e^{-4}. \\
+P^{(4)}(S_N = 0) &= \tfrac{48.6}{151}\,e^{-3} + \tfrac{102.4}{151}\,e^{-4}.
+\end{align*}
+
+\medskip
+\noindent\textit{Computing} $P^{(s)}(S_N = 1)$:
+\begin{align*}
+P^{(1)}(S_N = 1)
+    &= \frac{E[N^{(1)}]}{1}\bigl[1 \cdot 0.05 \cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{11.8}{3.4}\left[(0.05)\!\left(\frac{5.4}{11.8}\,e^{-3}
+       + \frac{6.4}{11.8}\,e^{-4}\right)\right] \\
+    &= 0.07941176471\,e^{-3} + 0.09411764706\,e^{-4}. \\
+P^{(2)}(S_N = 1)
+    &= \frac{E[N^{(2)}]}{1}\bigl[0.05 \cdot P^{(3)}(S_N = 0)\bigr] \\
+    &= 0.06864406780\,e^{-3} + 0.10847457627\,e^{-4}. \\
+P^{(3)}(S_N = 1)
+    &= \frac{E[N^{(3)}]}{1}\bigl[0.05 \cdot P^{(4)}(S_N = 0)\bigr] \\
+    &= 0.05813397129\,e^{-3} + 0.12248803828\,e^{-4}.
+\end{align*}
+
+\medskip
+\noindent\textit{Computing} $P^{(s)}(S_N = 2)$:
+\begin{align*}
+P^{(1)}(S_N = 2)
+    &= \frac{E[N^{(1)}]}{2}
+       \bigl[(0.05)\cdot P^{(2)}(S_N = 1) + (0.8)\cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= 0.64125\,e^{-3} + 0.76235294118\,e^{-4}. \\
+P^{(2)}(S_N = 2)
+    &= \frac{E[N^{(2)}]}{2}
+       \bigl[(0.05)\cdot P^{(3)}(S_N = 1) + (0.8)\cdot P^{(3)}(S_N = 0)\bigr] \\
+    &= 0.55430084746\,e^{-3} + 0.87864406780\,e^{-4}.
+\end{align*}
+
+\medskip
+\noindent\textit{Computing} $P^{(1)}(S_N = 3)$:
+\begin{align*}
+P^{(1)}(S_N = 3)
+    &= \frac{E[N^{(1)}]}{3}
+       \bigl[(0.05)\cdot P^{(2)}(S_N = 2)
+       + (0.8)\cdot P^{(2)}(S_N = 1)
+       + (0.3)\cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= 0.25441544118\,e^{-3} + 0.33945098039\,e^{-4}.
+\end{align*}
+
+\medskip
+\noindent\textit{Finally,} $P^{(0)}(S_N = 4)$:
+\begin{align*}
+P^{(0)}(S_N = 4)
+    &= \frac{E[N^{(0)}]}{4}
+       \bigl[(0.05)\cdot P^{(1)}(S_N = 3) + (0.8)\cdot P^{(1)}(S_N = 2) \\
+    &\qquad\qquad\qquad + (0.3)\cdot P^{(1)}(S_N = 1)
+       + P^{(1)}(S_N = 0)\bigr] \\
+    &= \frac{3.4}{4}
+       \bigl[(0.05)(0.25441544118\,e^{-3} + 0.33945098039\,e^{-4}) \\
+    &\qquad\qquad + (0.8)(0.64125\,e^{-3} + 0.76235294118\,e^{-4}) \\
+    &\qquad\qquad + (0.3)(0.07941176471\,e^{-3} + 0.09411764706\,e^{-4}) \\
+    &\qquad\qquad + \bigl(\tfrac{1.8}{3.4}\,e^{-3} + \tfrac{1.6}{3.4}\,e^{-4}\bigr)\bigr] \\
+    &= \boxed{0.91711265625\,e^{-3} + 0.95682666667\,e^{-4}}.
+\end{align*}
+\end{example}
+
+%% ============================================================
+\section{Finite Poisson Mixture Generalization}
+%% ============================================================
+
+Next, we will describe a more general case of the Finite Mixture of Poisson Distributions.
+Consider a discrete mixture distribution where the event is generated by one or more random
+processes.  The event is generated by one of $t$ processes, which follows a Poisson
+distribution with mean $\lambda_i$ for $i \in \mathbb{Z}$ with $0 < i \leq t$.  The
+probability of process $i$ is $\beta_i$ for $i \in \mathbb{Z}$ with $0 < i \leq t$ and
+where $\beta_1 + \beta_2 + \cdots + \beta_t = 1$.
+
+Now we are ready to define our probability mass function.  Let $s \in \mathbb{Z}$ with
+$0 \leq s$, and let $s$ represent the level of recursion.  Let the parameters of this
+distribution be $s, \lambda_1, \ldots, \lambda_t$.
+\[
+    P^{(s)}(N = n)
+    = \beta_1^{(s)} \cdot \frac{e^{-\lambda_1}\lambda_1^n}{n!}
+    + \beta_2^{(s)} \cdot \frac{e^{-\lambda_2}\lambda_2^n}{n!}
+    + \cdots
+    + \beta_t^{(s)} \cdot \frac{e^{-\lambda_t}\lambda_t^n}{n!},
+    \qquad n \geq 0.
+\]
+
+\begin{corollary}[Recursive Properties of the Generalized Finite Mixture of Poisson
+Distributions]\label{cor:poisson-gen}
+Let $N^{(s)}$ be a mixed Poisson random variable at recursion level $s$ with probability
+mass function
+\[
+    P^{(s)}(N = n)
+    = \sum_{j=1}^{t}
+      \left(\frac{\beta_j\,\lambda_j^s}{\sum_{i=1}^{t}\beta_i\,\lambda_i^s}\right)
+      \cdot \frac{e^{-\lambda_j}\lambda_j^n}{n!},
+\]
+where $\sum_{i=1}^{t}\beta_i = 1$, $\beta_i > 0$, and $\lambda_i > 0$.  Let $M^{(s)}$ be
+the random variable satisfying the compound identity condition associated with $N^{(s)}$.
+We claim that for all $s \geq 0$:
+\begin{enumerate}
+\item $\displaystyle E[N^{(s)}]
+      = \frac{\sum_{i=1}^{t}\beta_i\,\lambda_i^{s+1}}
+             {\sum_{j=1}^{t}\beta_j\,\lambda_j^s}.$
+\item The distribution of $M^{(s)} - 1$ is identical to the distribution of $N^{(s+1)}$.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}[Proof (by induction)]
+\textit{Base Case} $(s = 0)$: For $s = 0$, the weights are $\beta_i$.  First, we compute
+the expected value of $E[N^{(0)}]$:
+\begin{align*}
+E[N^{(0)}]
+    &= \sum_{n=0}^{\infty} n \left[\sum_{i=1}^{t}\beta_i \cdot
+       \frac{e^{-\lambda_i}\lambda_i^n}{n!}\right]
+     = \sum_{i=1}^{t}\beta_i\,\lambda_i.
+\end{align*}
+This matches the form of Claim~1 where the denominator
+$\sum_{i=1}^{t}\beta_i\,\lambda_i^0 = \sum_{i=1}^{t}\beta_i = 1$.
+
+Next, we apply the compound random identity and see that,
+\begin{align*}
+P(M^{(0)} - 1 = n)
+    &= P(M^{(0)} = n + 1)
+     = \frac{(n+1)\,P^{(0)}(N = n+1)}{E[N^{(0)}]} \\
+    &= \frac{(n+1)\!\left[\beta_1 \cdot
+       \dfrac{e^{-\lambda_1}\lambda_1^{n+1}}{(n+1)!}
+       + \cdots + \beta_t \cdot
+       \dfrac{e^{-\lambda_t}\lambda_t^{n+1}}{(n+1)!}\right]}
+      {\beta_1\lambda_1 + \cdots + \beta_t\lambda_t} \\
+    &= \frac{n+1}{\sum_{j=1}^{t}\beta_j\lambda_j}
+       \cdot \sum_{i=1}^{t}\beta_i \cdot
+       \frac{e^{-\lambda_i}\lambda_i^{n+1}}{(n+1)!} \\
+    &= \sum_{i=1}^{t}
+       \frac{\beta_i\,\lambda_i}{\sum_{j=1}^{t}\beta_j\,\lambda_j}
+       \cdot \frac{e^{-\lambda_i}\lambda_i^n}{n!}.
+\end{align*}
+This is exactly the definition of $P^{(1)}(N = n)$.  Thus, the claim holds for $s = 0$.
+
+\medskip
+\textit{Inductive Step}: Assume the statement is true for $s = k$.  That is, $M^{(k)} - 1$
+is equivalent to $N^{(k+1)}$ and $E[N^{(k)}]$ follows the claim.  We need to show the
+statement is true for $s = k + 1$.  We must determine the distribution of $M^{(k+1)} - 1$.
+
+We have,
+\[
+    P(M^{(k+1)} - 1 = n)
+    = P(M^{(k+1)} = n + 1)
+    = \frac{(n+1)\,P^{(k+1)}(N = n+1)}{E[N^{(k+1)}]}.
+\]
+First, we compute $E[N^{(k+1)}]$:
+\begin{align*}
+E[N^{(k+1)}]
+    &= \sum_{n=0}^{\infty} n \cdot
+       \sum_{i=1}^{t}
+       \left(\frac{\beta_i\,\lambda_i^{k+1}}{\sum_{j=1}^{t}\beta_j\,\lambda_j^{k+1}}\right)
+       \cdot \frac{e^{-\lambda_i}\lambda_i^n}{n!} \\
+    &= \sum_{i=1}^{t}
+       \left(\frac{\beta_i\,\lambda_i^{k+1}}{\sum_{j=1}^{t}\beta_j\,\lambda_j^{k+1}}\right)
+       \cdot \lambda_i
+     = \frac{\sum_{i=1}^{t}\beta_i\,\lambda_i^{k+2}}
+            {\sum_{j=1}^{t}\beta_j\,\lambda_j^{k+1}}.
+\end{align*}
+This confirms Claim~1 for $s = k + 1$.  Next, we substitute this into the probability
+expression:
+\begin{align*}
+P(M^{(k+1)} - 1 = n)
+    &= \frac{n+1}
+      {\displaystyle\frac{\sum_{i=1}^{t}\beta_i\lambda_i^{k+2}}
+                         {\sum_{j=1}^{t}\beta_j\lambda_j^{k+1}}}
+       \sum_{i=1}^{t}
+       \left(\frac{\beta_i\lambda_i^{k+1}}{\sum_{j=1}^{t}\beta_j\lambda_j^{k+1}}\right)
+       \cdot \frac{e^{-\lambda_i}\lambda_i^{n+1}}{(n+1)!}.
+\end{align*}
+We cancel the common denominator terms $\sum_{j=1}^{t}\beta_j\lambda_j^{k+1}$ and we have
+\begin{align*}
+    &= \frac{n+1}{\sum_{j=1}^{t}\beta_j\lambda_j^{k+2}}
+       \sum_{i=1}^{t}\beta_i\lambda_i^{k+1}
+       \cdot \frac{e^{-\lambda_i}\lambda_i^{n+1}}{(n+1)!} \\
+    &= \sum_{i=1}^{t}
+       \frac{\beta_i\lambda_i^{k+2}}{\sum_{j=1}^{t}\beta_j\lambda_j^{k+2}}
+       \cdot \frac{e^{-\lambda_i}\lambda_i^n}{n!}.
+\end{align*}
+This expression is exactly the PMF for $N^{(k+2)}$ as desired.
+
+So, by the principle of mathematical induction, for all $s \in \mathbb{N}$, the compound
+identity variable associated with $N^{(s)}$ shifts the distribution to $N^{(s+1)}$, and
+the expected value satisfies the derived closed form.
+\end{proof}
+
+Now we are ready to construct our new recursive expression by applying
+Corollary~\ref{cor:main}.  From
+\[
+    P(S_N = k) = \frac{1}{k}\,E[N]\sum_{i=1}^{k} i\,\alpha_i\,P(S_{M-1} = k - i),
+\]
+we arrive at the updated recursive equation
+\[
+    P^{(s)}(S_N = k)
+    = \frac{1}{k}
+      \cdot \frac{\sum_{i=1}^{t}\beta_i\,\lambda_i^{s+1}}
+                 {\sum_{i=1}^{t}\beta_i\,\lambda_i^s}
+      \cdot \sum_{i=1}^{k} i\,\alpha_i \cdot P^{(s+1)}(S_N = k - i).
+\]
+
+\begin{example}[Revisiting Example~\ref{ex:poisson}]\label{ex:revisit-poisson}
+Now we can compute the same compound random variable from
+Example~\ref{ex:poisson}, but with our updated recursive equation.  Like before, let $N$ be
+a random variable of the Poisson distribution with parameter $\lambda_1 = 3$.  So the
+probability mass function for the distribution of $N$ is
+\[
+    P^{(s)}(N = n) = \beta_1 \cdot \frac{e^{-\lambda}\,\lambda_1^n}{n!},
+    \quad \text{where } \beta_1 = 1.
+\]
+Furthermore,
+\[
+    E[N^{(s)}]
+    = \frac{\sum_{i=1}^{1}\beta_i\,\lambda_i^{s+1}}
+           {\sum_{i=1}^{1}\beta_i\,\lambda_i^s}
+    = \frac{\beta_1\,\lambda_1^{s+1}}{\beta_1\,\lambda_1^s}
+    = \frac{\lambda_1^{s+1}}{\lambda_1^s}
+    = \lambda_1 = 3, \qquad \forall\, s \in \mathbb{Z},\; s \geq 0.
+\]
+Now we calculate $P^{(0)}(S_N = 4)$.  We want to find
+\[
+    P^{(0)}(S_N = 4)
+    = \frac{3}{4}\bigl[0.05 \cdot P^{(1)}(S_N = 3) + 0.8 \cdot P^{(1)}(S_N = 2)
+      + 0.3 \cdot P^{(1)}(S_N = 1) + 4(0.25) \cdot P^{(1)}(S_N = 0)\bigr].
+\]
+We can solve each of these recursive expressions for all $s \in \mathbb{Z}$, $s \geq 0$.
+So we have,
+\begin{align*}
+P^{(s)}(S_N = 0) &= P(N^{(s)} = 0) = 1 \cdot \frac{e^{-\lambda}\,\lambda^0}{0!}
+    = e^{-\lambda} = e^{-3}, \qquad \forall\, s \geq 0. \\
+P^{(s)}(S_N = 1) &= \frac{3}{1}\bigl[1 \cdot (0.05) \cdot P(S_N = 0)\bigr]
+    = 3(0.05)\,e^{-3} = 0.15\,e^{-3}, \qquad \forall\, s \geq 0. \\
+P^{(s)}(S_N = 2) &= \frac{3}{2}\bigl[(0.05)\cdot P(S_N = 1) + 2(0.4)\cdot P(S_N = 0)\bigr] \\
+    &= \frac{3}{2}\bigl[(0.05)(0.15\,e^{-3}) + (0.8)\,e^{-3}\bigr]
+    = 1.21125\,e^{-3}, \qquad \forall\, s \geq 0. \\
+P^{(s)}(S_N = 3) &= \frac{3}{3}\bigl[(0.05)\cdot P(S_N = 2) + (0.8)\cdot P(S_N = 1)
+    + 3(0.1)\cdot P(S_N = 0)\bigr] \\
+    &= (0.05)(1.21125\,e^{-3}) + (0.8)(0.15\,e^{-3}) + (0.3)\,e^{-3}
+    = 0.4805625\,e^{-3}, \qquad \forall\, s \geq 0.
+\end{align*}
+Now we have everything we need to compute $P^{(0)}(S_N = 4)$.  We have,
+\begin{align*}
+P^{(0)}(S_N = 4)
+    &= \frac{3}{4}\bigl[0.05\cdot P^{(1)}(S_N = 3) + 0.8\cdot P^{(1)}(S_N = 2)
+       + 0.3\cdot P^{(1)}(S_N = 1) + 4(0.25)\cdot P^{(1)}(S_N = 0)\bigr] \\
+    &= \frac{3}{4}\bigl[0.05(0.4805625\,e^{-3}) + 0.8(1.21125\,e^{-3})
+       + 0.3(0.15\,e^{-3}) + e^{-3}\bigr] \\
+    &= 1.528521094\,e^{-3}.
+\end{align*}
+Notice, this is the same as our result from Example~\ref{ex:poisson}.
+\end{example}
+
+\begin{example}[Revisiting Example~\ref{ex:poisson-mix}]\label{ex:revisit-mix}
+We will consider again the case of a discrete mixture distribution where the event is
+generated by one of two random processes.  The event is either generated by process one,
+which follows a Poisson distribution with mean $\lambda_1$, or process two, which follows
+a Poisson distribution with mean $\lambda_2$.  Like in Example~\ref{ex:poisson-mix}, we
+let $\lambda_1 = 3$, $\lambda_2 = 4$, $\beta_1^{(0)} = 0.6$, $\beta_2^{(0)} = 0.4$.  We
+want to find $P^{(0)}(S_N = 4)$.
+
+So we have,
+\[
+    P^{(s)}(S_N = k)
+    = \frac{1}{k}
+      \left[
+        \frac{(0.6)(3)^{s+1} + (0.4)(4)^{s+1}}
+             {(0.6)(3)^s    + (0.4)(4)^s}
+      \right]
+      \sum_{i=1}^{k} i\,\alpha_i \cdot P^{(s+1)}(S_N = k - i).
+\]
+\begin{align*}
+P^{(0)}(S_N = 4)
+    &= \frac{1}{4}
+       \left[\frac{(0.6)(3)^1 + (0.4)(4)^1}{(0.6)(3)^0 + (0.4)(4)^0}\right]
+       \sum_{i=1}^{4} i\,\alpha_i \cdot P^{(1)}(S_N = 4 - i).
+\end{align*}
+
+\noindent\textit{Base cases}:
+\begin{align*}
+P^{(1)}(S_N = 0)
+    &= \frac{(0.6)(3)^1}{(0.6)(3)^1 + (0.4)(4)^1}\,e^{-3}
+     + \frac{(0.4)(4)^1}{(0.6)(3)^1 + (0.4)(4)^1}\,e^{-4}
+     = \frac{1.8}{3.4}\,e^{-3} + \frac{1.6}{3.4}\,e^{-4}. \\
+P^{(2)}(S_N = 0)
+    &= \frac{(0.6)(3)^2}{(0.6)(3)^2 + (0.4)(4)^2}\,e^{-3}
+     + \frac{(0.4)(4)^2}{(0.6)(3)^2 + (0.4)(4)^2}\,e^{-4}
+     = \frac{5.4}{11.8}\,e^{-3} + \frac{6.4}{11.8}\,e^{-4}. \\
+P^{(3)}(S_N = 0)
+    &= \frac{16.2}{41.8}\,e^{-3} + \frac{25.6}{41.8}\,e^{-4}. \\
+P^{(4)}(S_N = 0)
+    &= \frac{48.6}{151}\,e^{-3} + \frac{102.4}{151}\,e^{-4}.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(s)}(S_N = 1)$:
+\begin{align*}
+P^{(1)}(S_N = 1)
+    &= \left[\frac{(0.6)(3)^2 + (0.4)(4)^2}{(0.6)(3)^1 + (0.4)(4)^1}\right]
+       \bigl[1 \cdot 0.05 \cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{11.8}{3.4}\left[0.05\!\left(\frac{5.4}{11.8}\,e^{-3}
+       + \frac{6.4}{11.8}\,e^{-4}\right)\right]
+     = 0.07941176471\,e^{-3} + 0.09411764706\,e^{-4}. \\
+P^{(2)}(S_N = 1)
+    &= \frac{41.8}{11.8}\bigl[0.05 \cdot P^{(3)}(S_N = 0)\bigr]
+     = 0.06864406780\,e^{-3} + 0.10847457627\,e^{-4}. \\
+P^{(3)}(S_N = 1)
+    &= \frac{151}{41.8}\bigl[0.05 \cdot P^{(4)}(S_N = 0)\bigr]
+     = 0.05813397129\,e^{-3} + 0.12248803828\,e^{-4}.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(s)}(S_N = 2)$:
+\begin{align*}
+P^{(1)}(S_N = 2)
+    &= \frac{1}{2}\cdot\frac{11.8}{3.4}
+       \bigl[(0.05)\cdot P^{(2)}(S_N = 1) + (0.8)\cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= 0.64125\,e^{-3} + 0.76235294118\,e^{-4}. \\
+P^{(2)}(S_N = 2)
+    &= \frac{1}{2}\cdot\frac{41.8}{11.8}
+       \bigl[(0.05)\cdot P^{(3)}(S_N = 1) + (0.8)\cdot P^{(3)}(S_N = 0)\bigr] \\
+    &= 0.55430084746\,e^{-3} + 0.87864406780\,e^{-4}.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(1)}(S_N = 3)$:
+\begin{align*}
+P^{(1)}(S_N = 3)
+    &= \frac{1}{3}\cdot\frac{11.8}{3.4}
+       \bigl[(0.05)\cdot P^{(2)}(S_N = 2) + (0.8)\cdot P^{(2)}(S_N = 1)
+       + (0.3)\cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= 0.25441544118\,e^{-3} + 0.33945098039\,e^{-4}.
+\end{align*}
+
+\noindent\textit{Finally,} $P^{(0)}(S_N = 4)$:
+\begin{align*}
+P^{(0)}(S_N = 4)
+    &= \frac{1}{4}\cdot\frac{3.4}{1}
+       \bigl[(0.05)\cdot P^{(1)}(S_N = 3) + (0.8)\cdot P^{(1)}(S_N = 2) \\
+    &\qquad\qquad\quad + (0.3)\cdot P^{(1)}(S_N = 1)
+       + P^{(1)}(S_N = 0)\bigr] \\
+    &= \boxed{0.91711265625\,e^{-3} + 0.95682666667\,e^{-4}}.
+\end{align*}
+\end{example}
+
+%% ============================================================
+\section{Generalized Computation with a Finite Mixture of Distributions}
+%% ============================================================
+
+We have shown in Example~\ref{ex:poisson} with $N$ in the Poisson distribution that
+\[
+    P^{(s+1)}(M^{(s)} - 1 = n) = P^{(s)}(N = n).
+\]
+We have shown in Example~\ref{ex:negbin} with $N$ in the negative binomial distribution that
+\[
+    P^{(s)}(M^{(s)} - 1 = n) = P^{(s+1)}(N = n),
+\]
+where the negative binomial parameter shifts from $r + s$ to $r + s + 1$.  Similarly, we
+have shown in Example~\ref{ex:binom} with $N$ in the binomial distribution that
+\[
+    P^{(s)}(M^{(s)} - 1 = n) = P^{(s+1)}(N = n),
+\]
+where the binomial parameter shifts from $r - s$ to $r - s - 1$.
+
+Notice that for each of these distributions, when calculating $P(M^{(s)} - 1 = n)$, at a
+given level of recursion, we arrive at either $P^{(s)}(N = n)$ or a version of
+$P^{(s)}(N = n)$ with a parameter value change that is a function of the level of
+recursion.
+
+We will now show that by moving the level of recursion to a parameter of the probability
+mass function of the finite mixture of distributions we can compute a compound random
+variable with the counting distribution in any finite mixture of any of these three
+distributions.
+
+\begin{corollary}[Recursive Properties of the Finite Mixture Distributions]
+\label{cor:general}
+Let $s \in \mathbb{Z}$ with $0 \leq s$, and let $s$ represent the level of recursion.
+Let $N^{(s)}$ be a mixed random variable of Binomial or Negative Binomial distribution at
+recursion level $s$ with probability mass function:
+\[
+    P^{(s)}(N = n) = \sum_{j=1}^{t} \beta_j^{(s)}\, P_{r_j}(N^{(s)} = n), \qquad n \geq 0,
+\]
+where $\sum_{i=1}^{t}\beta_i = 1$.  Let $M^{(s)}$ be the random variable satisfying the
+compound identity condition associated with $N^{(s)}$.  We claim that for all $s \geq 0$:
+\begin{enumerate}
+\item $E[N^{(s)}] = \displaystyle\sum_{j=1}^{t} \beta_j^{(s)}\, E[N_j^{(0)}].$
+\item The distribution of $M^{(s)} - 1$ is identical to the distribution of $N^{(s+1)}$,
+      where the new weights are updated such that
+      \[
+          \beta_j^{(s+1)} = \beta_j^{(s)} \cdot
+          \frac{E[N_j^{(s)}]}{E[N^{(s)}]}.
+      \]
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}[Proof (by induction)]
+\textit{Base Case} $(s = 0)$: For $s = 0$, the weights are $\beta_i$.  First, we compute
+the expected value of $E[N^{(0)}]$:
+\begin{align*}
+E[N^{(0)}]
+    &= \sum_{n=0}^{\infty} n \cdot \left[\sum_{j=1}^{t}\beta_j^{(0)}\,P_{r_j}(n)\right]
+     = \sum_{j=1}^{t}\beta_j^{(0)}\,E[N_j^{(0)}].
+\end{align*}
+Thus, Claim~1 holds for case $s = 0$.
+
+Next, we apply the compound random identity and see that,
+\begin{align*}
+P(M^{(0)} - 1 = n)
+    &= P(M^{(0)} = n+1)
+     = \frac{(n+1)\,P(N^{(0)} = n+1)}{E[N^{(0)}]} \\
+    &= \frac{(n+1)\!\left[\sum_{j=1}^{t}\beta_j^{(0)}\,P_{r_j}(N^{(0)} = n+1)\right]}
+      {E[N^{(0)}]} \\
+    &= \frac{1}{E[N^{(0)}]}
+       \sum_{j=1}^{t}\beta_j^{(0)}\!\left[(n+1)\cdot P_{r_j}(N^{(0)} = n+1)\right].
+\end{align*}
+Notice that for the negative binomial distribution,
+$P^{(s)}(M^{(s)} - 1 = n) = P^{(s+1)}(N = n)$ implies
+\[
+    (n+1)\,P_r(N = n+1) = E[N]\, P_{r+1}(N = n).
+\]
+So by substitution we have,
+\begin{align*}
+P(M^{(0)} - 1 = n)
+    &= \frac{1}{E[N^{(0)}]}
+       \sum_{j=1}^{t}\beta_j^{(0)}\, E[N_j^{(0)}] \cdot P_{r_j+1}(N^{(1)} = n) \\
+    &= \sum_{j=1}^{t}
+       \frac{\beta_j\, E[N_j^{(0)}]}{E[N^{(0)}]} \cdot P_{r_j+1}(N^{(1)} = n).
+\end{align*}
+Similarly, for the binomial distribution,
+$P^{(s)}(M^{(s)} - 1 = n) = P^{(s+1)}(N = n)$ implies
+\[
+    (n+1)\,P_r(N = n+1) = E[N]\, P_{r-1}(N = n).
+\]
+So by substitution we have,
+\begin{align*}
+P(M^{(0)} - 1 = n)
+    &= \frac{1}{E[N^{(0)}]}
+       \sum_{j=1}^{t}\beta_j^{(0)}\, E[N_j^{(0)}] \cdot P_{r_j-1}(N^{(1)} = n) \\
+    &= \sum_{j=1}^{t}
+       \frac{\beta_j\, E[N_j^{(0)}]}{E[N^{(0)}]} \cdot P_{r_j-1}(N^{(1)} = n).
+\end{align*}
+These match the definition of $N^{(1)}$, a mixture with shifted parameters according to
+the distribution.  Thus, the claim holds for $s = 0$.
+
+\medskip
+\textit{Inductive Step}: Assume the statement is true for $s = k$.  That is, $M^{(k)} - 1$
+is equivalent to $N^{(k+1)}$ and $E[N^{(k)}]$ follows the claim.  We need to show the
+statement is true for $s = k + 1$.  We must determine the distribution of $M^{(k+1)} - 1$.
+
+We have,
+\begin{align*}
+P(M^{(k+1)} - 1 = n)
+    &= P(M^{(k+1)} = n+1)
+     = \frac{(n+1)\,P(N^{(k+1)} = n+1)}{E[N^{(k+1)}]}.
+\end{align*}
+Substituting the mixture sum for $N^{(k+1)}$,
+\begin{align*}
+P(M^{(k+1)} - 1 = n)
+    &= \frac{1}{E[N^{(k+1)}]}
+       \sum_{j=1}^{t}\beta_j^{(k+1)}
+       \!\left[(n+1)\cdot P_{r_j+(k+1)}(N^{(0)} = n+1)\right].
+\end{align*}
+So, for the negative binomial distribution, by substitution we have,
+\begin{align*}
+P(M^{(k+1)} - 1 = n)
+    &= \frac{1}{E[N^{(k+1)}]}
+       \sum_{j=1}^{t}\beta_j^{(k+1)}\, E[N_j^{(k+1)}]
+       \cdot P_{r_j+k+2}(N^{(1)} = n) \\
+    &= \sum_{j=1}^{t}
+       \frac{\beta_j^{k+1}\, E[N_j^{(k+1)}]}{E[N^{(k+1)}]}
+       \cdot P_{r_j+k+2}(N^{(1)} = n).
+\end{align*}
+Similarly, for the binomial distribution, by substitution we have,
+\begin{align*}
+P(M^{(k+1)} - 1 = n)
+    &= \frac{1}{E[N^{(k+1)}]}
+       \sum_{j=1}^{t}\beta_j^{(k+1)}\, E[N_j^{(k+1)}]
+       \cdot P_{r_j-(k+2)}(N^{(1)} = n) \\
+    &= \sum_{j=1}^{t}
+       \frac{\beta_j^{k+1}\, E[N_j^{(k+1)}]}{E[N^{(k+1)}]}
+       \cdot P_{r_j-(k+2)}(N^{(1)} = n).
+\end{align*}
+This expression is exactly the PMF for $N^{(k+2)}$ with weights $\beta_j^{k+1}$ as desired.
+
+So, by the principle of mathematical induction, for all $s \in \mathbb{N}$, the compound
+identity variable associated with $N^{(s)}$ shifts the distribution to $N^{(s+1)}$, and
+the expected value satisfies the derived closed form.
+\end{proof}
+
+Now we are ready to construct our new recursive expression by applying
+Corollary~\ref{cor:main}.  From
+\[
+    P(S_N = k) = \frac{1}{k}\,E[N]\sum_{i=1}^{k} i\,\alpha_i\,P(S_{M-1} = k - i),
+\]
+we arrive at the updated recursive equation
+\[
+    P^{(s)}(S_N = k)
+    = \frac{E[N^{(s)}]}{k} \cdot \sum_{i=1}^{k} i\,\alpha_i \cdot P^{(s+1)}(S_N = k - i),
+\]
+where $E[N^{(s)}] = \sum_{j=1}^{t}\beta_j^{(s)}\,E[N_j^{(0)}]$ and the computation of
+$P^{(s+1)}$ uses $\beta^{(s+1)}$ and parameters appropriate to the distribution of $P_i$,
+that is, $(r - s)$ for the binomial distribution, $(r + s)$ for the negative binomial
+distribution and no parameter change for the Poisson distribution.
+
+\begin{example}[N in a Finite Mixture of Binomial Distributions]\label{ex:binom-mix}
+Consider a discrete mixture distribution where the event is generated by one of two random
+processes.  The event is either generated by process one, which follows a Binomial
+distribution with $r_1 = 8$ and $p_1 = 0.5$, or process two, which follows a Binomial
+distribution with $r_2 = 10$ and $p_2 = 0.7$.  The probability of process one is
+$\beta_1^{(0)} = 0.6$.  The probability of process two is $\beta_2^{(0)} = 0.4$.  Notice
+that $\beta_1^{(0)} + \beta_2^{(0)} = 1$.  We want to find $P(S_N = 4)$.
+
+So, the probability mass function for this mixed distribution is
+\[
+    P^{(s)}(N = n)
+    = \sum_{j=1}^{2}\beta_j^{(s)}
+      \binom{r_j - s}{n} p_j^n(1-p_j)^{(r_j - s) - n},
+    \quad 0 \leq n \leq \max(r_1 - s,\, r_2 - s).
+\]
+
+\noindent\textit{Computing the mixing weights at each level}:
+\begin{align*}
+E[N^{(0)}]
+    &= \beta_1^{(0)}(r_1 - 0)p_1 + \beta_2^{(0)}(r_2 - 0)p_2
+     = 0.6 \cdot 8 \cdot 0.5 + 0.4 \cdot 10 \cdot 0.7
+     = 5.2. \\
+\beta_1^{(1)} &= \beta_1^{(0)} \cdot \frac{E[N_1^{(0)}]}{E[N^{(0)}]}
+    = \frac{2.4}{5.2} = 0.46153846154. \\
+\beta_2^{(1)} &= \beta_2^{(0)} \cdot \frac{E[N_2^{(0)}]}{E[N^{(0)}]}
+    = \frac{2.8}{5.2} = 0.53846153846. \\
+E[N^{(1)}]
+    &= \beta_1^{(1)}(r_1 - 1)p_1 + \beta_2^{(1)}(r_2 - 1)p_2 \\
+    &= 0.46153846154 \cdot 7 \cdot 0.5 + 0.53846153846 \cdot 9 \cdot 0.7
+     = 5.00769230769. \\
+\beta_1^{(2)} &= \beta_1^{(1)} \cdot \frac{E[N_1^{(1)}]}{E[N^{(1)}]}
+    = \frac{1.61538461538}{5.00769230769} = 0.32258064516. \\
+\beta_2^{(2)} &= \beta_2^{(1)} \cdot \frac{E[N_2^{(1)}]}{E[N^{(1)}]}
+    = \frac{3.39230769231}{5.00769230769} = 0.67741935484. \\
+E[N^{(2)}]
+    &= \beta_1^{(2)}(r_1 - 2)p_1 + \beta_2^{(2)}(r_2 - 2)p_2 \\
+    &= 0.32258064516 \cdot 6 \cdot 0.5 + 0.67741935484 \cdot 8 \cdot 0.7
+     = 4.76129032258. \\
+\beta_1^{(3)} &= \beta_1^{(2)} \cdot \frac{E[N_1^{(2)}]}{E[N^{(2)}]}
+    = \frac{0.96774193548}{4.76129032258} = 0.20325203252. \\
+\beta_2^{(3)} &= \beta_2^{(2)} \cdot \frac{E[N_2^{(2)}]}{E[N^{(2)}]}
+    = \frac{3.79354838710}{4.76129032258} = 0.79674796748. \\
+E[N^{(3)}]
+    &= \beta_1^{(3)}(r_1 - 3)p_1 + \beta_2^{(3)}(r_2 - 3)p_2 \\
+    &= 0.20325203252 \cdot 5 \cdot 0.5 + 0.79674796748 \cdot 7 \cdot 0.7
+     = 4.41219512195. \\
+\beta_1^{(4)} &= \beta_1^{(3)} \cdot \frac{E[N_1^{(3)}]}{E[N^{(3)}]}
+    = \frac{0.50813008130}{4.41219512195} = 0.11516491616. \\
+\beta_2^{(4)} &= \beta_2^{(3)} \cdot \frac{E[N_2^{(3)}]}{E[N^{(3)}]}
+    = \frac{3.90406504065}{4.41219512195} = 0.88483508384. \\
+E[N^{(4)}]
+    &= \beta_1^{(4)}(r_1 - 4)p_1 + \beta_2^{(4)}(r_2 - 4)p_2 \\
+    &= 0.11516491616 \cdot 4 \cdot 0.5 + 0.88483508384 \cdot 6 \cdot 0.7
+     = 3.94663718445.
+\end{align*}
+
+Now we can begin the computation to find $P^{(0)}(S_N = 4)$.  We want to find,
+\[
+    P^{(0)}(S_N = 4)
+    = \frac{E[N^{(0)}]}{4}
+      \bigl[0.05 \cdot P^{(1)}(S_N = 3) + 0.8 \cdot P^{(1)}(S_N = 2)
+      + 0.3 \cdot P^{(1)}(S_N = 1) + P^{(1)}(S_N = 0)\bigr].
+\]
+
+\noindent\textit{Base cases}:
+\[
+    P^{(s)}(S_N = 0)
+    = \beta_1^{(s)} \cdot (1-p_1)^{r_1-s} + \beta_2^{(s)} \cdot (1-p_2)^{r_2-s}
+    = \beta_1^{(s)} \cdot (0.5)^{8-s} + \beta_2^{(s)} \cdot (0.3)^{10-s}.
+\]
+\begin{align*}
+P^{(1)}(S_N = 0)
+    &= 0.46153846154\,(0.5)^7 + 0.53846153846\,(0.3)^9
+     = 0.00361636777. \\
+P^{(2)}(S_N = 0)
+    &= 0.32258064516\,(0.5)^6 + 0.67741935484\,(0.3)^8
+     = 0.00508476806. \\
+P^{(3)}(S_N = 0)
+    &= 0.20325203252\,(0.5)^5 + 0.79674796748\,(0.3)^7
+     = 0.00652587480. \\
+P^{(4)}(S_N = 0)
+    &= 0.11516491616\,(0.5)^4 + 0.88483508384\,(0.3)^6
+     = 0.00784285204.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(s)}(S_N = 1)$:
+\begin{align*}
+P^{(1)}(S_N = 1)
+    &= \frac{E[N^{(1)}]}{1}\bigl[0.05 \cdot P^{(2)}(S_N = 0)\bigr]
+     = 5.00769230769(0.05)(0.00508476806) = 0.00127314770. \\
+P^{(2)}(S_N = 1)
+    &= \frac{E[N^{(2)}]}{1}\bigl[0.05 \cdot P^{(3)}(S_N = 0)\bigr]
+     = 4.76129032258(0.05)(0.00652587480) = 0.00155357923. \\
+P^{(3)}(S_N = 1)
+    &= \frac{E[N^{(3)}]}{1}\bigl[0.05 \cdot P^{(4)}(S_N = 0)\bigr]
+     = 4.41219512195(0.05)(0.00784285204) = 0.00173020967.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(s)}(S_N = 2)$:
+\begin{align*}
+P^{(1)}(S_N = 2)
+    &= \frac{E[N^{(1)}]}{2}
+       \bigl[0.05 \cdot P^{(2)}(S_N = 1) + 0.8 \cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{5.00769230769}{2}
+       \bigl[0.05(0.00155357923) + 0.8(0.00508476806)\bigr]
+     = 0.01037967774. \\
+P^{(2)}(S_N = 2)
+    &= \frac{E[N^{(2)}]}{2}
+       \bigl[0.05 \cdot P^{(3)}(S_N = 1) + 0.8 \cdot P^{(3)}(S_N = 0)\bigr] \\
+    &= \frac{4.76129032258}{2}
+       \bigl[0.05(0.00173020967) + 0.8(0.00652587480)\bigr]
+     = 0.01263458457.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(1)}(S_N = 3)$:
+\begin{align*}
+P^{(1)}(S_N = 3)
+    &= \frac{E[N^{(1)}]}{3}
+       \bigl[0.05 \cdot P^{(2)}(S_N = 2) + 0.8 \cdot P^{(2)}(S_N = 1)
+       + 0.3 \cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{5.00769230769}{3}
+       \bigl[0.05(0.01263458457) + 0.8(0.00155357923)
+       + 0.3(0.00508476806)\bigr] \\
+    &= 0.00567542306.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(0)}(S_N = 4)$:
+\begin{align*}
+P^{(0)}(S_N = 4)
+    &= \frac{E[N^{(0)}]}{4}
+       \bigl[0.05 \cdot P^{(1)}(S_N = 3) + 0.8 \cdot P^{(1)}(S_N = 2)
+       + 0.3 \cdot P^{(1)}(S_N = 1) + P^{(1)}(S_N = 0)\bigr] \\
+    &= \frac{5.2}{4}
+       \bigl[0.05(0.00567542306) + 0.8(0.01037967774) \\
+    &\qquad\qquad + 0.3(0.00127314770) + 0.00361636777\bigr] \\
+    &= \boxed{0.01636157305}.
+\end{align*}
+\end{example}
+
+\begin{example}[N in a Finite Mixture of Negative Binomial Distributions]
+\label{ex:negbin-mix}
+Consider a discrete mixture distribution where the event is generated by one of two random
+processes.  The event is either generated by process one, which follows a Negative Binomial
+distribution with $r_1 = 4$ and $p_1 = 0.6$, or process two, which follows a Negative
+Binomial distribution with $r_2 = 6$ and $p_2 = 0.5$.  The probability of process one is
+$\beta_1^{(0)} = 0.5$.  The probability of process two is $\beta_2^{(0)} = 0.5$.  Notice
+that $\beta_1^{(0)} + \beta_2^{(0)} = 1$.  We want to find $P(S_N = 4)$.
+
+So, the probability mass function for this mixed distribution is
+\[
+    P^{(s)}(N = n)
+    = \sum_{j=1}^{2}\beta_j^{(s)}
+      \binom{n + r_j + s - 1}{n} p_j^{r_j+s}(1-p_j)^n,
+    \quad 0 \leq n \leq \max(r_1 + s,\, r_2 + s).
+\]
+
+\noindent\textit{Computing the mixing weights at each level}:
+\begin{align*}
+E[N^{(0)}]
+    &= 0.5\left(\frac{(4+0)(0.4)}{0.6}\right) + 0.5\left(\frac{(6+0)(0.5)}{0.5}\right)
+     = 4.33333333333. \\
+\beta_1^{(1)} &= 0.5 \cdot \frac{1.33333333333}{4.33333333333} = 0.30769230769. \\
+\beta_2^{(1)} &= 0.5 \cdot \frac{3}{4.33333333333} = 0.69230769231. \\
+E[N^{(1)}]
+    &= 0.30769230769 \cdot \frac{5 \cdot 0.4}{0.6}
+     + 0.69230769231 \cdot \frac{7 \cdot 0.5}{0.5}
+     = 5.87179487179. \\
+\beta_1^{(2)} &= 0.30769230769 \cdot
+    \frac{1.02564102564}{5.87179487179} = 0.17467248908. \\
+\beta_2^{(2)} &= 0.69230769231 \cdot
+    \frac{4.84615384615}{5.87179487179} = 0.82532751092. \\
+E[N^{(2)}]
+    &= 0.17467248908 \cdot \frac{6 \cdot 0.4}{0.6}
+     + 0.82532751092 \cdot \frac{8 \cdot 0.5}{0.5}
+     = 7.30131004367. \\
+\beta_1^{(3)} &= 0.17467248908 \cdot
+    \frac{0.69868995633}{7.30131004367} = 0.09569377990. \\
+\beta_2^{(3)} &= 0.82532751092 \cdot
+    \frac{6.60262008734}{7.30131004367} = 0.90430622010. \\
+E[N^{(3)}]
+    &= 0.09569377990 \cdot \frac{7 \cdot 0.4}{0.6}
+     + 0.90430622010 \cdot \frac{9 \cdot 0.5}{0.5}
+     = 8.58532695375. \\
+\beta_1^{(4)} &= 0.09569377990 \cdot
+    \frac{0.44664430295}{8.58532695375} = 0.05201560468. \\
+\beta_2^{(4)} &= 0.90430622010 \cdot
+    \frac{8.13875598086}{8.58532695375} = 0.94798439532. \\
+E[N^{(4)}]
+    &= 0.05201560468 \cdot \frac{8 \cdot 0.4}{0.6}
+     + 0.94798439532 \cdot \frac{10 \cdot 0.5}{0.5}
+     = 9.75726051149.
+\end{align*}
+
+Now we can begin the computation to find $P^{(0)}(S_N = 4)$.  We want to find,
+\[
+    P^{(0)}(S_N = 4)
+    = \frac{E[N^{(0)}]}{4}
+      \bigl[0.05 \cdot P^{(1)}(S_N = 3) + 0.8 \cdot P^{(1)}(S_N = 2)
+      + 0.3 \cdot P^{(1)}(S_N = 1) + P^{(1)}(S_N = 0)\bigr].
+\]
+
+\noindent\textit{Base cases}
+$P^{(s)}(S_N = 0) = \beta_1^{(s)}\,p_1^{r_1+s} + \beta_2^{(s)}\,p_2^{r_2+s}$:
+\begin{align*}
+P^{(0)}(S_N = 0)
+    &= 0.5(0.6)^4 + 0.5(0.5)^6 = 0.0726125. \\
+P^{(1)}(S_N = 0)
+    &= 0.30769230769(0.6)^5 + 0.69230769231(0.5)^7
+     = 0.02933480769. \\
+P^{(2)}(S_N = 0)
+    &= 0.17467248908(0.6)^6 + 0.82532751092(0.5)^8
+     = 0.01137345524. \\
+P^{(3)}(S_N = 0)
+    &= 0.09569377990(0.6)^7 + 0.90430622010(0.5)^9
+     = 0.00444503648. \\
+P^{(4)}(S_N = 0)
+    &= 0.05201560468(0.6)^8 + 0.94798439532(0.5)^{10}
+     = 0.00179942843.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(s)}(S_N = 1)$:
+\begin{align*}
+P^{(1)}(S_N = 1)
+    &= \frac{E[N^{(1)}]}{1}\bigl[0.05 \cdot P^{(2)}(S_N = 0)\bigr]
+     = 5.87179487179(0.05)(0.01137345524) = 0.00333912981. \\
+P^{(2)}(S_N = 1)
+    &= \frac{E[N^{(2)}]}{1}\bigl[0.05 \cdot P^{(3)}(S_N = 0)\bigr]
+     = 7.30131004367(0.05)(0.00444503648) = 0.00162272948. \\
+P^{(3)}(S_N = 1)
+    &= \frac{E[N^{(3)}]}{1}\bigl[0.05 \cdot P^{(2)}(S_N = 0)\bigr]
+     = 8.58532695375(0.05)(0.01137345524) = 0.00488224159.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(s)}(S_N = 2)$:
+\begin{align*}
+P^{(1)}(S_N = 2)
+    &= \frac{E[N^{(1)}]}{2}
+       \bigl[0.05 \cdot P^{(2)}(S_N = 1) + 0.8 \cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{5.87179487179}{2}
+       \bigl[0.05(0.00162272948) + 0.8(0.01137345524)\bigr]
+     = 0.02695124683. \\
+P^{(2)}(S_N = 2)
+    &= \frac{E[N^{(2)}]}{2}
+       \bigl[0.05 \cdot P^{(3)}(S_N = 1) + 0.8 \cdot P^{(3)}(S_N = 0)\bigr] \\
+    &= \frac{7.30131004367}{2}
+       \bigl[0.05(0.00488224159) + 0.8(0.00444503648)\bigr]
+     = 0.01387300480.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(1)}(S_N = 3)$:
+\begin{align*}
+P^{(1)}(S_N = 3)
+    &= \frac{E[N^{(1)}]}{3}
+       \bigl[0.05 \cdot P^{(2)}(S_N = 2) + 0.8 \cdot P^{(2)}(S_N = 1)
+       + 0.3 \cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{5.87179487179}{3}
+       \bigl[0.05(0.01387300480) + 0.8(0.00162272948)
+       + 0.3(0.01137345524)\bigr] \\
+    &= 0.01057680615.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(0)}(S_N = 4)$:
+\begin{align*}
+P^{(0)}(S_N = 4)
+    &= \frac{E[N^{(0)}]}{4}
+       \bigl[0.05 \cdot P^{(1)}(S_N = 3) + 0.8 \cdot P^{(1)}(S_N = 2)
+       + 0.3 \cdot P^{(1)}(S_N = 1) + P^{(1)}(S_N = 0)\bigr] \\
+    &= \frac{4.33333333333}{4}
+       \bigl[0.05(0.01057680615) + 0.8(0.02695124683) \\
+    &\qquad\qquad + 0.3(0.00333912981) + 0.02933480769\bigr] \\
+    &= \boxed{0.05679524977}.
+\end{align*}
+\end{example}
+
+\begin{example}[N in a Finite Mixture of Poisson, Binomial and Negative Binomial
+Distributions]\label{ex:full-mix}
+Consider a discrete mixture distribution where the event is generated by one of three
+random processes.  The event is either generated by process one, which follows a Poisson
+distribution with $\lambda = 3$, or process two, which follows a Binomial distribution with
+$r_2 = 6$ and $p_2 = 0.5$, or process three, which follows a Negative Binomial
+distribution with $r_3 = 2$ and $p_3 = 0.4$.  The probability of process one is
+$\beta_1^{(0)} = 0.4$.  The probability of process two is $\beta_2^{(0)} = 0.3$.  The
+probability of process three is $\beta_3^{(0)} = 0.3$.  Notice that
+$\beta_1^{(0)} + \beta_2^{(0)} + \beta_3^{(0)} = 1$.  We want to find $P(S_N = 4)$.
+
+So, the probability mass function for this mixed distribution is
+\[
+    P^{(s)}(N = n)
+    = \beta_1^{(s)} \cdot \frac{e^{-\lambda}\lambda^n}{n!}
+    + \beta_2^{(s)} \cdot \binom{r_2 - s}{n} p_2^n(1-p_2)^{(r_2-s)-n}
+    + \beta_3^{(s)} \cdot \binom{n + r_3 + s - 1}{n} p_3^{r_3+s}(1-p_3)^n,
+\]
+for $0 \leq n \leq \max(r_2 - s,\, r_3 + s)$.
+
+So we have,
+\begin{align*}
+E[N_1^{(s)}] &= \lambda = 3, \quad \text{for all } s. \\
+E[N_2^{(s)}] &= (r_2 - s)\,p_2 = (6 - s)(0.5). \\
+E[N_3^{(s)}] &= \frac{(r_3 + s)(1-p_3)}{p_3}
+    = \frac{(2 + s)(0.6)}{0.4} = (2 + s)(1.5).
+\end{align*}
+
+\noindent\textit{Computing the mixing weights at each level}:
+\begin{align*}
+\beta_1^{(0)} &= 0.4, \quad \beta_2^{(0)} = 0.3, \quad \beta_3^{(0)} = 0.3. \\
+E[N^{(0)}]
+    &= (0.4)(3) + (0.3)(3) + (0.3)(3) = 3. \\
+\beta_1^{(1)} &= 0.4 \cdot \frac{3}{3} = 0.4. \\
+\beta_2^{(1)} &= 0.3 \cdot \frac{3}{3} = 0.3. \\
+\beta_3^{(1)} &= 0.3 \cdot \frac{3}{3} = 0.3. \\
+E[N^{(1)}]
+    &= 0.4(3) + 0.3(2.5) + 0.3(4.5) = 3.3. \\
+\beta_1^{(2)} &= 0.4 \cdot \frac{3}{3.3} = 0.36363636364. \\
+\beta_2^{(2)} &= 0.3 \cdot \frac{2.5}{3.3} = 0.22727272727. \\
+\beta_3^{(2)} &= 0.3 \cdot \frac{4.5}{3.3} = 0.40909090909. \\
+E[N^{(2)}]
+    &= 0.36363636364(3) + 0.22727272727(2) + 0.40909090909(6) = 4. \\
+\beta_1^{(3)} &= 0.36363636364 \cdot \frac{3}{4} = 0.27272727273. \\
+\beta_2^{(3)} &= 0.22727272727 \cdot \frac{2}{4} = 0.11363636364. \\
+\beta_3^{(3)} &= 0.40909090909 \cdot \frac{6}{4} = 0.61363636364. \\
+E[N^{(3)}]
+    &= 0.27272727273(3) + 0.11363636364(1.5) \\
+    &\quad + 0.61363636364(7.5) = 5.59090909091. \\
+\beta_1^{(4)} &= 0.27272727273 \cdot \frac{3}{5.59090909091} = 0.14634146341. \\
+\beta_2^{(4)} &= 0.11363636364 \cdot \frac{1.5}{5.59090909091} = 0.03048780488. \\
+\beta_3^{(4)} &= 0.61363636364 \cdot
+    \frac{7.5}{5.59090909091} = 0.82317073171. \\
+E[N^{(4)}]
+    &= 0.14634146341(3) + 0.03048780488(1) \\
+    &\quad + 0.82317073171(9) = 7.87804878049.
+\end{align*}
+
+Now we can begin the computation to find $P^{(0)}(S_N = 4)$.  We want to find,
+\[
+    P^{(0)}(S_N = 4)
+    = \frac{E[N^{(0)}]}{4}
+      \bigl[0.05 \cdot P^{(1)}(S_N = 3) + 0.8 \cdot P^{(1)}(S_N = 2)
+      + 0.3 \cdot P^{(1)}(S_N = 1) + P^{(1)}(S_N = 0)\bigr].
+\]
+
+\noindent\textit{Base cases}:
+\[
+    P^{(s)}(N = 0)
+    = \beta_1^{(s)}\,e^{-3} + \beta_2^{(s)}\,(0.5)^{6-s}
+    + \beta_3^{(s)}\,(0.4)^{2+s}.
+\]
+\begin{align*}
+P^{(0)}(S_N = 0)
+    &= 0.4\,e^{-3} + 0.3(0.5)^6 + 0.3(0.4)^2 = 0.07260232735. \\
+P^{(1)}(S_N = 0)
+    &= 0.4\,e^{-3} + 0.3(0.5)^5 + 0.3(0.4)^3 = 0.04848982735. \\
+P^{(2)}(S_N = 0)
+    &= 0.36363636364\,e^{-3} + 0.22727272727(0.5)^4
+     + 0.40909090909(0.4)^4 = 0.04278166122. \\
+P^{(3)}(S_N = 0)
+    &= 0.27272727273\,e^{-3} + 0.11363636364(0.5)^3
+     + 0.61363636364(0.4)^5 = 0.03406647319. \\
+P^{(4)}(S_N = 0)
+    &= 0.14634146341\,e^{-3} + 0.03048780488(0.5)^2
+     + 0.82317073171(0.4)^6 = 0.01827957098.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(s)}(S_N = 1)$:
+\begin{align*}
+P^{(1)}(S_N = 1)
+    &= \frac{E[N^{(1)}]}{1}\bigl[0.05 \cdot P^{(2)}(S_N = 0)\bigr]
+     = 3.3(0.05)(0.04278166122) = 0.00705897410. \\
+P^{(2)}(S_N = 1)
+    &= \frac{E[N^{(2)}]}{1}\bigl[0.05 \cdot P^{(3)}(S_N = 0)\bigr]
+     = 4(0.05)(0.03406647319) = 0.00681329464. \\
+P^{(3)}(S_N = 1)
+    &= \frac{E[N^{(3)}]}{1}\bigl[0.05 \cdot P^{(4)}(S_N = 0)\bigr]
+     = 5.59090909091(0.05)(0.01827957098) = 0.00510997098.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(s)}(S_N = 2)$:
+\begin{align*}
+P^{(1)}(S_N = 2)
+    &= \frac{E[N^{(1)}]}{2}
+       \bigl[0.05 \cdot P^{(2)}(S_N = 1) + 0.8 \cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{3.3}{2}
+       \bigl[0.05(0.00681329464) + 0.8(0.04278166122)\bigr]
+     = 0.05703388962. \\
+P^{(2)}(S_N = 2)
+    &= \frac{E[N^{(2)}]}{2}
+       \bigl[0.05 \cdot P^{(3)}(S_N = 1) + 0.8 \cdot P^{(3)}(S_N = 0)\bigr] \\
+    &= \frac{4}{2}
+       \bigl[0.05(0.00510997098) + 0.8(0.03406647319)\bigr]
+     = 0.05501735420.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(1)}(S_N = 3)$:
+\begin{align*}
+P^{(1)}(S_N = 3)
+    &= \frac{E[N^{(1)}]}{3}
+       \bigl[0.05 \cdot P^{(2)}(S_N = 2) + 0.8 \cdot P^{(2)}(S_N = 1)
+       + 0.3 \cdot P^{(2)}(S_N = 0)\bigr] \\
+    &= \frac{3.3}{3}
+       \bigl[0.05(0.05501735420) + 0.8(0.00681329464)
+       + 0.3(0.04278166122)\bigr] \\
+    &= 0.02313960197.
+\end{align*}
+
+\noindent\textit{Computing} $P^{(0)}(S_N = 4)$:
+\begin{align*}
+P^{(0)}(S_N = 4)
+    &= \frac{E[N^{(0)}]}{4}
+       \bigl[0.05 \cdot P^{(1)}(S_N = 3) + 0.8 \cdot P^{(1)}(S_N = 2)
+       + 0.3 \cdot P^{(1)}(S_N = 1) + P^{(1)}(S_N = 0)\bigr] \\
+    &= \frac{3}{4}
+       \bigl[0.05(0.02313960197) + 0.8(0.05703388962)
+       + 0.3(0.00705897410) + 0.04848982735\bigr] \\
+    &= \boxed{0.07304370853}.
+\end{align*}
+\end{example}
+
+%% ============================================================
+%  Bibliography (placeholder — update with actual references)
+%% ============================================================
+\begin{thebibliography}{9}
+
+\bibitem{todo}
+[TODO: Need the right list here. Potentials are Feller (1968), Grandell (1997),
+and Johnson, Kotz, and Kemp (1992).]
+
+\end{thebibliography}
+
+\end{document}
