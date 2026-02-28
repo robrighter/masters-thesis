@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Build righter_thesis.tex into a PDF.
-# Requires a TeX distribution with latexmk and pdflatex (e.g. TeX Live or MiKTeX).
+# Supports local TeX tools (latexmk/pdflatex) or a Docker fallback.
 
 set -euo pipefail
 
 THESIS="righter_thesis.tex"
+TEX_DOCKER_IMAGE="${TEX_DOCKER_IMAGE:-blang/latex:ctanfull}"
 
 if [ ! -f "$THESIS" ]; then
   echo "Error: $THESIS not found in the current directory." >&2
@@ -19,12 +20,13 @@ elif command -v pdflatex &>/dev/null; then
   pdflatex -interaction=nonstopmode "$THESIS"
   pdflatex -interaction=nonstopmode "$THESIS"
   pdflatex -interaction=nonstopmode "$THESIS"
+elif command -v docker &>/dev/null; then
+  docker run --rm -v "$PWD":/data "$TEX_DOCKER_IMAGE" \
+    latexmk -pdf -interaction=nonstopmode "$THESIS"
+  docker run --rm -v "$PWD":/data "$TEX_DOCKER_IMAGE" latexmk -c
 else
-  echo "Error: neither latexmk nor pdflatex found." >&2
-  echo "Please install a TeX distribution such as TeX Live:" >&2
-  echo "  Ubuntu/Debian: sudo apt-get install texlive-full" >&2
-  echo "  macOS:         brew install --cask mactex" >&2
-  echo "  Windows:       https://miktex.org/download" >&2
+  echo "Error: no TeX builder found (latexmk, pdflatex, or docker)." >&2
+  echo "Install a TeX distribution or Docker, then run build.sh again." >&2
   exit 1
 fi
 

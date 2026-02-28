@@ -9,7 +9,10 @@ The primary source file is `righter_thesis.tex`.
 
 ## Prerequisites
 
-A full TeX distribution that provides **latexmk** and **pdflatex** is required.
+Either of the following is sufficient:
+
+1. A TeX distribution that provides **latexmk** and **pdflatex**
+2. Docker (the build script will compile in a TeX container)
 
 | Platform | Recommended distribution |
 |---|---|
@@ -29,8 +32,15 @@ bash build.sh
 
 The script will compile `righter_thesis.tex` using `latexmk` (preferred) or
 fall back to three sequential `pdflatex` passes when `latexmk` is not
-available.  The finished document is written to **`righter_thesis.pdf`** in the
-same directory.
+available. If no local TeX tools are installed but Docker is available, the
+script uses `blang/latex:ctanfull` automatically. The finished document is
+written to **`righter_thesis.pdf`** in the same directory.
+
+To override the Docker image:
+
+```bash
+TEX_DOCKER_IMAGE=blang/latex:ctanfull bash build.sh
+```
 
 ### Manual build (latexmk)
 
