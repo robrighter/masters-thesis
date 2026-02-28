@@ -9,7 +9,17 @@
 \usepackage{amssymb}
 \usepackage{mathtools}
 \usepackage[margin=1.25in]{geometry}
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{etoolbox}
 \allowdisplaybreaks
+
+%% ------ Spacing ------
+\titlespacing*{\section}{0pt}{2.5ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+\titlespacing*{\subsection}{0pt}{2.0ex plus 0.8ex minus .2ex}{1.2ex plus .2ex}
+
+\AtBeginEnvironment{example}{\begin{spacing}{1.15}}
+\AtEndEnvironment{example}{\end{spacing}}
 
 %% ------ Theorem-style Environments ------
 \theoremstyle{definition}
