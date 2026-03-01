@@ -15,11 +15,41 @@
 \allowdisplaybreaks
 
 %% ------ Spacing ------
+
+\setlength{\headsep}{18pt}   % try 18pt–24pt
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\centering}
+  {\thesection.}
+  {0.8em}
+  {}
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\centering}
+  {\thesubsection.}
+  {0.8em}
+  {}
+
 \titlespacing*{\section}{0pt}{2.5ex plus 1ex minus .2ex}{1.5ex plus .2ex}
 \titlespacing*{\subsection}{0pt}{2.0ex plus 0.8ex minus .2ex}{1.2ex plus .2ex}
 
+\AtBeginEnvironment{definition}{\begin{spacing}{1.12}}
+\AtEndEnvironment{definition}{\end{spacing}}
+\AtBeginEnvironment{theorem}{\begin{spacing}{1.12}}
+\AtEndEnvironment{theorem}{\end{spacing}}
+\AtBeginEnvironment{corollary}{\begin{spacing}{1.12}}
+\AtEndEnvironment{corollary}{\end{spacing}}
 \AtBeginEnvironment{example}{\begin{spacing}{1.15}}
 \AtEndEnvironment{example}{\end{spacing}}
+
+\AtBeginEnvironment{definition}{\vspace{0.75\baselineskip}\begin{spacing}{1.12}}
+\AtEndEnvironment{definition}{\end{spacing}\vspace{0.5\baselineskip}}
+\AtBeginEnvironment{example}{\vspace{0.75\baselineskip}\begin{spacing}{1.15}}
+\AtEndEnvironment{example}{\end{spacing}\vspace{0.5\baselineskip}}
+\AtBeginEnvironment{theorem}{\vspace{0.75\baselineskip}\begin{spacing}{1.12}}
+\AtEndEnvironment{theorem}{\end{spacing}\vspace{0.5\baselineskip}}
+\AtBeginEnvironment{corollary}{\vspace{0.75\baselineskip}\begin{spacing}{1.12}}
+\AtEndEnvironment{corollary}{\end{spacing}\vspace{0.5\baselineskip}}
 
 %% ------ Theorem-style Environments ------
 \theoremstyle{definition}
@@ -31,7 +61,7 @@
 \newtheorem{corollary}{Corollary}
 
 %% ------ Title Block ------
-\title[Recursive Computation of Compound Random Variables with a Finite-Mixture Count Distribution]{Recursive Computation of Compound Random Variables with a Finite-Mixture Count Distribution (Poisson, Binomial, and Negative Binomial Components)}
+\title[Recursive Computation with Finite-Mixture Count Distributions]{Recursive Computation of Compound Random Variables with a Finite-Mixture Count Distribution}
 \author{Robert Righter}
 \date{}
 
