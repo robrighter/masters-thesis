@@ -67,7 +67,68 @@
 
 \begin{document}
 
-\maketitle
+% ============================================================
+%  Front Matter
+% ============================================================
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+\vspace*{0.18\textheight}
+{\LARGE Recursive Computation of Compound Random Variables with a Finite-Mixture Count Distribution\par}
+\vspace{0.14\textheight}
+{\Large Robert Righter\par}
+\vspace{0.10\textheight}
+{\Large March 2026\par}
+\vspace{0.8em}
+{\Large Master's Thesis\par}
+\vspace{0.8em}
+{\Large Supervising Professor: Dr. John Whitaker\par}
+\vspace{0.8em}
+{\Large Department of Mathematics,\par}
+\vspace{0.4em}
+{\Large Shawnee State University\par}
+\vfill
+\begin{minipage}{0.46\textwidth}
+\raggedright
+Accepted by the Graduate Department
+
+\vspace{2.5em}
+\rule{\linewidth}{0.4pt}\\[-0.2em]
+Graduate Director, Date
+\end{minipage}
+\end{center}
+\end{titlepage}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\noindent The thesis entitled ``Recursive Computation of Compound Random Variables with a
+Finite-Mixture Count Distribution'' presented by Robert Righter, a candidate for the degree of
+Master of Science in Mathematics, has
+been approved and is worthy of acceptance.
+
+\vspace{3.5em}
+\noindent\begin{minipage}[t]{0.42\textwidth}
+\rule{0.95\linewidth}{0.4pt}\\[-0.2em]
+Date
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.42\textwidth}
+\rule{0.95\linewidth}{0.4pt}\\[-0.2em]
+Graduate Director
+\end{minipage}
+
+\vspace{3.5em}
+\noindent\begin{minipage}[t]{0.42\textwidth}
+\rule{0.95\linewidth}{0.4pt}\\[-0.2em]
+Date
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.42\textwidth}
+\rule{0.95\linewidth}{0.4pt}\\[-0.2em]
+Student
+\end{minipage}
+\end{titlepage}
+
 
 %% ============================================================
 \section{Introduction}
@@ -77,7 +138,7 @@ Compound random variables have been studied extensively in probability theory an
 fields, as they provide a natural framework for modeling aggregate quantities subject to two
 layers of randomness: the distribution of the summands and the distribution of the count
 variable. Classical treatments can be found in
-\cite{TODO},
+\cite{ross2010,pekoz-ross},
 where compound distributions are developed in the context of actuarial mathematics and
 discrete distributions.
 
@@ -123,6 +184,20 @@ is a \emph{compound random variable}.
 In a compound random variable, the distribution of $N$ is called the \emph{compounding
 distribution}.
 \end{definition}
+
+\subsection*{Intuitive Demonstration (Placeholder)}
+To be completed: an intuitive demonstration using the law of total probability to compute
+$P(S_N = 4)$ for the same setup as Example~\ref{ex:poisson}.
+
+Suggested structure to fill in:
+\begin{itemize}
+    \item Condition on $N=n$ and write $P(S_N=4)=\sum_{n=0}^{\infty}P(S_n=4)P(N=n)$.
+    \item Compute the first nonzero terms for $n=1,2,3,4$ and justify why larger terms are
+    still valid in the summation.
+    \item Compare this direct law-of-total-probability computation with the recursive value in
+    Example~\ref{ex:poisson}.
+\end{itemize}
+
 
 \begin{theorem}[Compound Random Variable Identity]
 Let $M$ be a random variable that is independent of the sequence of random variables
@@ -1618,10 +1693,18 @@ P^{(0)}(S_N = 4)
 %% ============================================================
 \begin{thebibliography}{9}
 
-\bibitem{todo}
-[TODO: Need the right list here. Potentials are Feller (1968), Grandell (1997),
-and Johnson, Kotz, and Kemp (1992).]
+\bibitem{ross2010}
+S. M. Ross, \emph{Introduction to Probability Models}, 10th ed., Academic Press,
+Amsterdam, 2010.
+
+\bibitem{pekoz-ross}
+E. Pek\"{o}z and S. M. Ross, ``Compound Random Variables,'' manuscript, School of
+Management, Boston University, and Epstein Department of Industrial and Systems
+Engineering, University of Southern California.
 
 \end{thebibliography}
+
+\section*{Biographical Statement}
+[Add author biographical statement here.]
 
 \end{document}
