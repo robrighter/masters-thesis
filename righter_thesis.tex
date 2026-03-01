@@ -35,6 +35,12 @@
 \titlespacing*{\section}{0pt}{4.5ex plus 1.5ex minus .2ex}{2.5ex plus .5ex}
 \titlespacing*{\subsection}{0pt}{3.5ex plus 1ex minus .2ex}{2.0ex plus .5ex}
 
+%% ------ TOC fix: titlesec writes \numberline to .toc but amsart expects \tocsection;
+%% provide a 2em indent so the section number does not overlap the first title letter.
+\makeatletter
+\renewcommand{\l@section}{\@tocline{1}{0pt}{1pc}{2em}{}}
+\makeatother
+
 \AtBeginEnvironment{definition}{\vspace{1.5\baselineskip}\begin{spacing}{1.3}}
 \AtEndEnvironment{definition}{\end{spacing}\vspace{1.0\baselineskip}}
 \AtBeginEnvironment{example}{\vspace{1.5\baselineskip}\begin{spacing}{1.3}}
