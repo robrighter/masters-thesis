@@ -2,6 +2,8 @@
 
 **Shawnee State University · MS in Mathematics**
 
+**Thesis Advisor:** [Dr. John Whitaker](https://www.shawnee.edu/areas-study/college-arts-and-sciences/math-sciences/faculty)
+
 ## Recursive Computation of Compound Random Variables with a Finite-Mixture Count Distribution
 
 ### Abstract
@@ -22,6 +24,8 @@ to this case leads to a computationally intensive, nested problem, where the mix
 of the distribution must be recalculated at each step. Additionally, a closed-form
 expression is derived that computes these recursive weights directly, thereby eliminating
 some of the nested recursion and simplifying the calculation.
+
+📄 [Read the PDF of the thesis](righter_thesis.pdf) · 📊 [View the results of the computation implementation](implementation/results.txt)
 
 ---
 
