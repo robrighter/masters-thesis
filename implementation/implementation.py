@@ -615,31 +615,35 @@ def test_example_8_mixed_negative_binomial():
     Test from thesis Example 8: Mixed Negative Binomial
     Component 1: NegBin(r1=4, p1=0.6), β1=0.5
     Component 2: NegBin(r2=6, p2=0.5), β2=0.5
-    Expected: P(S_N = 4) = 0.05679524977079922
+    Expected: P(S_N = 4) = 0.05679127315 (corrected thesis value)
+
+    The thesis originally displayed 0.05679524977, which was the result of
+    propagating rounded intermediate values through the final step.  The
+    corrected value 0.05679127315 is confirmed by both the recursive and
+    LTP methods and is now reflected in the thesis.
     """
     print("=" * 60)
     print("Test 6: Mixed Negative Binomial (Example 8 from thesis)")
     print("=" * 60)
-    
+
     claim_probs = {1: 0.05, 2: 0.4, 3: 0.1, 4: 0.25, 5: 0.2}
-    
+
     components = [
         (DistributionType.NEGATIVE_BINOMIAL, {"r": 4, "p": 0.6}, 0.5),
         (DistributionType.NEGATIVE_BINOMIAL, {"r": 6, "p": 0.5}, 0.5)
     ]
-    
+
     model = MixedCompoundRV(components, claim_probs)
-    
+
     result = model.compute_prob(4)
-    expected = 0.05679524977079922
-    
+    expected = 0.056791273151484377  # exact computed value; thesis displays rounded 0.05679127315
+
     print(f"Computed P(S_N = 4) = {result:.18f}")
     print(f"Expected P(S_N = 4) = {expected:.18f}")
     print(f"Difference: {abs(result - expected):.2e}")
-    # Note: Small discrepancy may exist due to accumulated rounding in hand calculations
-    print(f"Test PASSED: {math.isclose(result, expected, rel_tol=1e-4)}\n")
-    
-    return math.isclose(result, expected, rel_tol=1e-4)
+    print(f"Test PASSED: {math.isclose(result, expected, rel_tol=1e-6)}\n")
+
+    return math.isclose(result, expected, rel_tol=1e-6)
 
 
 def test_example_9_mixed_all_three():
@@ -762,10 +766,19 @@ def compare_simulation_vs_recursive(name: str, components: List[Tuple],
           f"  {'|Rec-Sim|':>11}  {'|LTP-Sim|':>11}")
     print("-" * 80)
 
+    # Relative error is only meaningful when the exact probability is large enough
+    # for the simulation to produce a reliable estimate.  With n_simulations draws,
+    # the relative standard error of a proportion p is 1/sqrt(n*p).  We require at
+    # least MIN_EXPECTED_COUNT expected events so that 1/sqrt(n*p) <= ~5%, giving a
+    # comfortable margin below the 10% pass threshold.
+    MIN_EXPECTED_COUNT = 400  # ensures rel std err <= 1/sqrt(400) = 5%
+    rel_threshold = MIN_EXPECTED_COUNT / n_simulations
+
     total_abs_error_rec = 0.0
     total_abs_error_ltp = 0.0
     max_rel_error_rec = 0.0
     max_rel_error_ltp = 0.0
+    skipped_k = []
 
     for k in range(max_k + 1):
         rec = recursive_probs[k]
@@ -773,29 +786,39 @@ def compare_simulation_vs_recursive(name: str, components: List[Tuple],
         sim = simulated_probs[k]
         abs_diff_rec = abs(rec - sim)
         abs_diff_ltp = abs(ltp - sim)
-        rel_diff_rec = abs_diff_rec / rec if rec > 1e-10 else 0.0
-        rel_diff_ltp = abs_diff_ltp / ltp if ltp > 1e-10 else 0.0
 
         total_abs_error_rec += abs_diff_rec
         total_abs_error_ltp += abs_diff_ltp
-        max_rel_error_rec = max(max_rel_error_rec, rel_diff_rec)
-        max_rel_error_ltp = max(max_rel_error_ltp, rel_diff_ltp)
 
+        # Only track relative error when the exact probability is above the
+        # reliability threshold; below it the simulation variance dominates.
+        if rec >= rel_threshold:
+            rel_diff_rec = abs_diff_rec / rec
+            rel_diff_ltp = abs_diff_ltp / ltp if ltp > 1e-10 else 0.0
+            max_rel_error_rec = max(max_rel_error_rec, rel_diff_rec)
+            max_rel_error_ltp = max(max_rel_error_ltp, rel_diff_ltp)
+        else:
+            skipped_k.append(k)
+
+        note = " *" if rec < rel_threshold else ""
         print(f"{k:>4}  {rec:>14.10f}  {ltp:>14.10f}  {sim:>14.10f}"
-              f"  {abs_diff_rec:>11.2e}  {abs_diff_ltp:>11.2e}")
+              f"  {abs_diff_rec:>11.2e}  {abs_diff_ltp:>11.2e}{note}")
 
     print("-" * 80)
+    if skipped_k:
+        print(f"  * k={skipped_k} excluded from rel-error check: P(S_N=k) < {rel_threshold:.4f}"
+              f" (expected count < {MIN_EXPECTED_COUNT})")
     print(f"{'Total abs error':>22}  {'Recursive:':>10} {total_abs_error_rec:.6f}"
           f"  {'LTP:':>5} {total_abs_error_ltp:.6f}")
     print(f"{'Max rel error':>22}  {'Recursive:':>10} {max_rel_error_rec:.2%}"
-          f"  {'LTP:':>5} {max_rel_error_ltp:.2%}")
+          f"  {'LTP:':>5} {max_rel_error_ltp:.2%}"
+          f"  (over reliable k only)")
 
-    # Both exact methods should agree closely; check simulation convergence
     max_exact_diff = max(abs(recursive_probs[k] - ltp_probs[k]) for k in range(max_k + 1))
     print(f"{'Max |Rec - LTP|':>22}  {max_exact_diff:.2e}  (exact methods agree)")
 
     passed = max(max_rel_error_rec, max_rel_error_ltp) < 0.10
-    print(f"\nConvergence check (max rel error < 10%): {'PASSED' if passed else 'FAILED'}")
+    print(f"\nConvergence check (max rel error < 10%, reliable k only): {'PASSED' if passed else 'FAILED'}")
 
     return passed
 
@@ -807,7 +830,7 @@ def run_simulation_comparisons():
     print("=" * 70)
     
     claim_probs = {1: 0.05, 2: 0.4, 3: 0.1, 4: 0.25, 5: 0.2}
-    n_sims = 100000
+    n_sims = 500000
     
     test_cases = [
         (
@@ -1154,38 +1177,41 @@ def test_intuitive_example_ltp():
     return math.isclose(result, expected, rel_tol=1e-6)
 
 
-def compare_computation_counts(k_values: List[int] = None):
+def compare_computation_counts(name: str, components: List[Tuple],
+                                claim_probs: dict,
+                                k_values: List[int] = None):
     """
-    Compare the number of operations between the recursive Panjer method
-    and the Law of Total Probability method at various values of k.
+    Compare operations and peak memory between the recursive and LTP methods
+    at various values of k for a single example.
 
-    For both methods, an 'operation' is one multiplication of a claim
-    probability (α_i) by a previously-computed probability value inside
-    the key convolution sum — the dominant repeated computation in each
-    algorithm.
+    An 'operation' is one multiplication of a claim probability (α_i) by a
+    previously-computed probability value in the core convolution sum.
+    'Memory' is the peak number of probability values stored simultaneously:
+    the recursive cache accumulates all (value, level) pairs; LTP keeps only
+    the current convolution slice.
 
     Parameters
     ----------
+    name : str
+        Display name for this example.
+    components : list
+        Mixture components in MixedCompoundRV format.
+    claim_probs : dict
+        Claim size distribution.
     k_values : list of int
-        Values of k to compare. Defaults to [1, 2, 3, 5, 10, 20, 30, 50].
+        Values of k to compare.
     """
     if k_values is None:
         k_values = [1, 2, 3, 5, 10, 20, 50, 100, 200]
 
-    claim_probs = {1: 0.05, 2: 0.4, 3: 0.1, 4: 0.25, 5: 0.2}
-    components = [(DistributionType.POISSON, {"lambda": 3}, 1.0)]
-
     print("\n" + "=" * 95)
-    print("COMPUTATION COUNT AND MEMORY COMPARISON: Recursive vs. Law of Total Probability")
-    print("N ~ Poisson(λ=3), claim distribution support {1,2,3,4,5}")
+    print(f"COMPUTATION COUNT AND MEMORY: {name}")
     print("'Operations' = multiplications in the core convolution sum")
-    print("'Memory'     = peak number of probability values stored simultaneously")
-    print("               Recursive: all cache entries accumulate (never evicted)")
-    print("               LTP:       only the current convolution slice f_n is kept")
+    print("'Memory'     = peak stored probability values  "
+          "(Recursive: cumulative cache; LTP: one slice)")
     print("=" * 95)
-    header = (f"\n{'k':>5}  {'Rec Ops':>10}  {'LTP Ops':>10}  {'Op Ratio':>10}"
-              f"  {'Rec Mem':>10}  {'LTP Mem':>10}  {'Mem Ratio':>10}")
-    print(header)
+    print(f"\n{'k':>5}  {'Rec Ops':>10}  {'LTP Ops':>10}  {'Op Ratio':>10}"
+          f"  {'Rec Mem':>10}  {'LTP Mem':>10}  {'Mem Ratio':>10}")
     print("-" * 75)
 
     recursive_model = MixedCompoundRV(components, claim_probs)
@@ -1202,34 +1228,152 @@ def compare_computation_counts(k_values: List[int] = None):
               f"  {rec_mem:>10,}  {ltp_mem:>10,}  {mem_ratio:>9.2f}x")
 
     print("-" * 75)
+
+
+def compare_all_examples_computation(k_values: List[int] = None):
+    """
+    Compare recursive vs. LTP computation counts and memory usage for every
+    thesis example, first as a summary at k=4 (the thesis target), then as a
+    detailed k-sweep for each individual example.
+
+    Parameters
+    ----------
+    k_values : list of int
+        Values of k for the detailed per-example sweep.
+    """
+    if k_values is None:
+        k_values = [1, 2, 3, 5, 10, 20, 50, 100, 200]
+
+    examples = get_all_examples()
+
+    # ------------------------------------------------------------------ #
+    # Summary table: all examples at k=4                                  #
+    # ------------------------------------------------------------------ #
+    print("\n" + "=" * 105)
+    print("COMPUTATION COUNT AND MEMORY SUMMARY AT k=4: All Thesis Examples")
+    print("Recursive vs. Law of Total Probability")
+    print("'Operations' = multiplications in the core convolution sum")
+    print("'Memory'     = peak stored values  "
+          "(Recursive: cumulative cache; LTP: one slice)")
+    print("=" * 105)
+    print(f"\n{'Example':<35}  {'Rec Ops':>8}  {'LTP Ops':>8}  {'Op Ratio':>9}"
+          f"  {'Rec Mem':>8}  {'LTP Mem':>8}  {'Mem Ratio':>9}")
+    print("-" * 95)
+
+    for name, (components, claim_probs) in examples.items():
+        rec_model = MixedCompoundRV(components, claim_probs)
+        ltp_model = LTPCompoundRV(components, claim_probs)
+        rec_ops  = rec_model.count_ops_for_k(4)
+        ltp_ops  = ltp_model.count_ops_for_k(4)
+        rec_mem  = rec_model.peak_memory_for_k(4)
+        ltp_mem  = ltp_model.peak_memory_for_k(4)
+        op_ratio  = ltp_ops / rec_ops  if rec_ops  > 0 else float("inf")
+        mem_ratio = rec_mem / ltp_mem  if ltp_mem  > 0 else float("inf")
+        print(f"{name:<35}  {rec_ops:>8,}  {ltp_ops:>8,}  {op_ratio:>8.2f}x"
+              f"  {rec_mem:>8,}  {ltp_mem:>8,}  {mem_ratio:>8.2f}x")
+
+    print("-" * 95)
+    print()
+    print("Key finding: all examples produce identical operation and memory counts.")
+    print("  The convolution-sum work depends only on the claim distribution support")
+    print("  {1,2,3,4,5} and the target k — not on the distribution of N.  Whether")
+    print("  N is Poisson, Binomial, Negative Binomial, or any mixture, the recursive")
+    print("  method visits the same set of unique (value, level) pairs and the LTP")
+    print("  method performs the same n-fold convolution steps.  The distribution of")
+    print("  N affects only the scalar weights applied at each step, not the count.")
     print()
     print("Interpretation:")
     print("  Operations: Both methods are O(k²); the recursive method has a slight")
     print("    constant-factor advantage at small k via memoization, converging to")
     print("    the same cost as k grows.")
-    print("  Memory: The recursive method's cache grows as O(k²) total entries and")
-    print("    is never freed. The LTP method discards each convolution slice after")
-    print("    use, so its peak storage is O(k) — one slice at a time.")
+    print("  Memory: The recursive cache is O(k²) and never freed; LTP peak")
+    print("    storage is O(k) — one convolution slice at a time.")
+
+    # ------------------------------------------------------------------ #
+    # Detailed k-sweep for each example                                   #
+    # ------------------------------------------------------------------ #
+    for name, (components, claim_probs) in examples.items():
+        compare_computation_counts(name, components, claim_probs, k_values)
 
 
-def _estimate_uncached_ops(k: int, memo: dict = None) -> int:
+def compare_full_distribution_efficiency(max_k_values: List[int] = None):
     """
-    Compute the uncached operation count via the recurrence, without
-    actually running the expensive recursion.
+    Demonstrate the efficiency of computing the full distribution P(S_N = 0..K)
+    in a single shared pass versus K+1 independent single-point queries.
 
-    T(0) = 1
-    T(k) = min(k,5) + sum_{i=1}^{min(k,5)} T(k-i)
+    For the recursive method the shared pass keeps the memoization cache alive
+    across all k values, so subproblems computed for smaller k are reused when
+    computing larger k.  For LTP the shared pass builds the convolution table
+    once and reads off all k values simultaneously.
+
+    Both are contrasted against the cost of calling compute_prob(k) separately
+    for each k from 0 to K, which discards all intermediate state between calls.
+
+    Parameters
+    ----------
+    max_k_values : list of int
+        Values of K (the upper limit of the distribution) to demonstrate.
     """
-    if memo is None:
-        memo = {}
-    if k in memo:
-        return memo[k]
-    if k == 0:
-        return 1
-    fan = min(k, 5)
-    result = fan + sum(_estimate_uncached_ops(k - i, memo) for i in range(1, fan + 1))
-    memo[k] = result
-    return result
+    if max_k_values is None:
+        max_k_values = [5, 10, 20, 50, 100]
+
+    claim_probs = {1: 0.05, 2: 0.4, 3: 0.1, 4: 0.25, 5: 0.2}
+    components = [(DistributionType.POISSON, {"lambda": 3}, 1.0)]
+
+    print("\n" + "=" * 95)
+    print("FULL DISTRIBUTION EFFICIENCY: Single-Pass vs. Independent Per-k Queries")
+    print("N ~ Poisson(λ=3), claim distribution support {1,2,3,4,5}")
+    print("Computing P(S_N = k) for all k = 0, 1, ..., K")
+    print("=" * 95)
+
+    # Header
+    print(f"\n{'':>4}  "
+          f"{'--- Recursive ---':^38}  "
+          f"{'--- LTP ---':^38}")
+    print(f"{'K':>4}  "
+          f"{'Independent':>12}  {'Shared pass':>12}  {'Savings':>11}  "
+          f"{'Independent':>12}  {'Shared pass':>12}  {'Savings':>11}")
+    print("-" * 93)
+
+    rec = MixedCompoundRV(components, claim_probs)
+    ltp = LTPCompoundRV(components, claim_probs)
+
+    for K in max_k_values:
+        # Independent queries: clear state before each k
+        rec_independent = sum(rec.count_ops_for_k(k) for k in range(K + 1))
+        ltp_independent = sum(ltp.count_ops_for_k(k) for k in range(K + 1))
+
+        # Shared pass: one call computes all k = 0..K with shared state
+        rec.clear_cache()
+        rec._op_count = 0
+        rec.compute_distribution(K)
+        rec_shared = rec._op_count
+
+        ltp._op_count = 0
+        ltp.compute_distribution(K)
+        ltp_shared = ltp._op_count
+
+        rec_saving_pct = 100 * (rec_independent - rec_shared) / rec_independent
+        ltp_saving_pct = 100 * (ltp_independent - ltp_shared) / ltp_independent
+
+        print(f"{K:>4}  "
+              f"{rec_independent:>12,}  {rec_shared:>12,}  {rec_saving_pct:>10.1f}%  "
+              f"{ltp_independent:>12,}  {ltp_shared:>12,}  {ltp_saving_pct:>10.1f}%")
+
+    print("-" * 93)
+    print()
+    print("Interpretation:")
+    print("  Independent: compute_prob(k) called separately for each k = 0..K;")
+    print("    the recursive cache is cleared and LTP rebuilds its convolution")
+    print("    table from scratch on every call.")
+    print("  Shared pass: compute_distribution(K) called once; the recursive")
+    print("    cache accumulates across all k values so subproblems solved for")
+    print("    smaller k are reused for larger k, and LTP builds the convolution")
+    print("    table once and reads off every k simultaneously.")
+    print("  Both methods achieve large savings with a shared pass.  The recursive")
+    print("    savings grow because its cache depth (the level s) increases with k,")
+    print("    creating more overlap between successive single-point queries.")
+
 
 
 def compare_cached_vs_uncached(k_values: List[int] = None,
@@ -1248,8 +1392,8 @@ def compare_cached_vs_uncached(k_values: List[int] = None,
         Values of k to compare.
     uncached_limit : int
         Maximum k for which the uncached version is actually executed.
-        Beyond this limit the count is estimated from the recurrence
-        (avoiding the multi-minute runtime of the true exponential tree).
+        Beyond this limit the growth is exponential and the runtime is
+        infeasible; those rows display a note instead of a count.
     """
     if k_values is None:
         k_values = [1, 2, 3, 5, 8, 10, 12, 15, 18, 20, 30, 50, 100]
@@ -1257,46 +1401,32 @@ def compare_cached_vs_uncached(k_values: List[int] = None,
     claim_probs = {1: 0.05, 2: 0.4, 3: 0.1, 4: 0.25, 5: 0.2}
     components = [(DistributionType.POISSON, {"lambda": 3}, 1.0)]
     model = MixedCompoundRV(components, claim_probs)
-    recurrence_memo = {}
 
     print("\n" + "=" * 80)
     print("CACHING BENEFIT: Recursive Method With vs. Without Memoization")
     print("N ~ Poisson(λ=3), claim distribution support {1,2,3,4,5}")
     print("'Operations' = convolution-sum multiplications (α_i × probability)")
-    print(f"Uncached ops verified by execution for k ≤ {uncached_limit};")
-    print("  larger values estimated from the recurrence T(k) = min(k,5) +")
-    print("  sum_{i=1}^{min(k,5)} T(k-i), which matches execution exactly.")
+    print(f"Uncached ops computed directly for k ≤ {uncached_limit}; beyond that")
+    print("  the exponential growth makes direct computation infeasible.")
     print("=" * 80)
-    print(f"\n{'k':>5}  {'Cached':>12}  {'Uncached (est)':>16}  {'Speedup':>18}  {'Cache entries':>14}")
-    print("-" * 73)
+    print(f"\n{'k':>5}  {'Cached':>12}  {'Uncached':>22}  {'Speedup':>18}  {'Cache entries':>14}")
+    print("-" * 80)
 
     for k in k_values:
         cached_ops = model.count_ops_for_k(k)
         cache_entries = len(model._cache)
-        estimated_uncached = _estimate_uncached_ops(k, recurrence_memo)
-        speedup = estimated_uncached / cached_ops if cached_ops > 0 else float("inf")
-
-        # Format large uncached counts in scientific notation
-        if estimated_uncached > 1e15:
-            uncached_str = f"{estimated_uncached:.3e}"
-        else:
-            uncached_str = f"{estimated_uncached:,}"
-
-        if speedup > 1e12:
-            speedup_str = f"{speedup:.2e}x"
-        else:
-            speedup_str = f"{speedup:,.1f}x"
 
         if k <= uncached_limit:
-            actual_uncached = model.count_ops_uncached(k)
-            verified = "✓" if actual_uncached == estimated_uncached else "!"
-            print(f"{k:>5}  {cached_ops:>12,}  {uncached_str:>16} {verified}  "
-                  f"{speedup_str:>16}  {cache_entries:>14,}")
+            uncached_ops = model.count_ops_uncached(k)
+            speedup = uncached_ops / cached_ops if cached_ops > 0 else float("inf")
+            speedup_str = f"{speedup:,.1f}x"
+            print(f"{k:>5}  {cached_ops:>12,}  {uncached_ops:>22,}  "
+                  f"{speedup_str:>18}  {cache_entries:>14,}")
         else:
-            print(f"{k:>5}  {cached_ops:>12,}  {uncached_str:>16}    "
-                  f"{speedup_str:>16}  {cache_entries:>14,}")
+            print(f"{k:>5}  {cached_ops:>12,}  {'(too large to compute)':>22}  "
+                  f"{'—':>18}  {cache_entries:>14,}")
 
-    print("-" * 73)
+    print("-" * 80)
     print()
     print("Interpretation:")
     print("  Each unique (value, level) pair can be reached by multiple paths")
@@ -1318,8 +1448,11 @@ if __name__ == "__main__":
     # Caching benefit comparison
     compare_cached_vs_uncached()
 
-    # Computation count comparison
-    compare_computation_counts()
+    # Computation count and memory comparison across all examples
+    compare_all_examples_computation()
+
+    # Full distribution efficiency: shared pass vs. independent queries
+    compare_full_distribution_efficiency()
 
     # Run simulation comparisons
     print("\n\n")
