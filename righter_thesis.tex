@@ -16,9 +16,15 @@
 
 %% ------ Spacing ------
 
-\setstretch{1.3}
+\setstretch{1.5}
 
 \setlength{\headsep}{18pt}   % try 18pt–24pt
+
+%% Extra breathing room around display-math blocks
+\setlength{\abovedisplayskip}{14pt plus 4pt minus 4pt}
+\setlength{\belowdisplayskip}{14pt plus 4pt minus 4pt}
+\setlength{\abovedisplayshortskip}{8pt plus 3pt}
+\setlength{\belowdisplayshortskip}{10pt plus 3pt minus 3pt}
 
 \titleformat{\section}
   {\normalfont\large\bfseries\centering}
@@ -41,14 +47,14 @@
 \renewcommand{\l@section}{\@tocline{1}{0pt}{1pc}{2em}{}}
 \makeatother
 
-\AtBeginEnvironment{definition}{\vspace{1.5\baselineskip}\begin{spacing}{1.3}}
-\AtEndEnvironment{definition}{\end{spacing}\vspace{1.0\baselineskip}}
-\AtBeginEnvironment{example}{\vspace{1.5\baselineskip}\begin{spacing}{1.3}}
-\AtEndEnvironment{example}{\end{spacing}\vspace{1.0\baselineskip}}
-\AtBeginEnvironment{theorem}{\vspace{1.5\baselineskip}\begin{spacing}{1.3}}
-\AtEndEnvironment{theorem}{\end{spacing}\vspace{1.0\baselineskip}}
-\AtBeginEnvironment{corollary}{\vspace{1.5\baselineskip}\begin{spacing}{1.3}}
-\AtEndEnvironment{corollary}{\end{spacing}\vspace{1.0\baselineskip}}
+\AtBeginEnvironment{definition}{\vspace{2.0\baselineskip}\begin{spacing}{1.5}}
+\AtEndEnvironment{definition}{\end{spacing}\vspace{1.5\baselineskip}}
+\AtBeginEnvironment{example}{\vspace{2.0\baselineskip}\begin{spacing}{1.5}}
+\AtEndEnvironment{example}{\end{spacing}\vspace{1.5\baselineskip}}
+\AtBeginEnvironment{theorem}{\vspace{2.0\baselineskip}\begin{spacing}{1.5}}
+\AtEndEnvironment{theorem}{\end{spacing}\vspace{1.5\baselineskip}}
+\AtBeginEnvironment{corollary}{\vspace{2.0\baselineskip}\begin{spacing}{1.5}}
+\AtEndEnvironment{corollary}{\end{spacing}\vspace{1.5\baselineskip}}
 
 %% ------ Theorem-style Environments ------
 \theoremstyle{definition}
