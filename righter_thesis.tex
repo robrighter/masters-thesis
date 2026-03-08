@@ -43,8 +43,10 @@
 
 %% ------ TOC fix: titlesec writes \numberline to .toc but amsart expects \tocsection;
 %% provide a 2em indent so the section number does not overlap the first title letter.
+\setcounter{tocdepth}{2}
 \makeatletter
 \renewcommand{\l@section}{\@tocline{1}{0pt}{1pc}{2em}{}}
+\renewcommand{\l@subsection}{\@tocline{2}{0pt}{2pc}{3em}{}}
 \makeatother
 
 \AtBeginEnvironment{definition}{\vspace{2.0\baselineskip}\begin{spacing}{1.5}}
@@ -1752,6 +1754,7 @@ P^{(0)}(S_N = 4)
 \end{align*}
 \end{example}
 
+\newpage
 %% ============================================================
 %  Bibliography (placeholder — update with actual references)
 %% ============================================================
@@ -1768,6 +1771,7 @@ Engineering, University of Southern California.
 
 \end{thebibliography}
 
+\newpage
 \section*{Biographical Statement}
 [Add author biographical statement here.]
 
