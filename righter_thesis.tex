@@ -186,9 +186,6 @@ In a compound random variable, the distribution of $N$ is called the \emph{compo
 distribution}.
 \end{definition}
 
-\subsection*{Intuitive Demonstration (Placeholder)}
-To be completed: an intuitive demonstration using the law of total probability to compute
-$P(S_N = 4)$ for the same setup as Example~\ref{ex:poisson}.
 
 
 \begin{theorem}[Compound Random Variable Identity]
@@ -357,7 +354,70 @@ So,
 
 Therefore, $E[N^{(s)}] = \lambda = 3$. 
 
-NEW_INTUITIVE EXAMPLE GOES HERE
+Before applying Corollary~1 to compute $P(S_N = 4)$, consider an alternate,
+more intuitive approach.  This method utilizes the law of total probability
+and directly sums the probability of every outcome that yields the target sum.
+
+Recall the \emph{law of total probability}: to calculate $E[X]$ we may take
+a weighted average of the conditional expected value of $X$ given $Y = y$,
+each term $E[X \mid Y = y]$ being weighted by $P(Y = y)$ \cite[p.~107]{ross2010}.  Written formally,
+\[
+    E[X] = \sum_{y} E[X \mid Y = y] \cdot P(Y = y).
+\]
+
+\begin{proof}
+\begin{align*}
+\sum_{y} E[X \mid Y = y] \cdot P(Y = y)
+    &= \sum_{y}\sum_{x} x\,P(X = x \mid Y = y) \cdot P(Y = y) \\
+    &= \sum_{y}\sum_{x} x \cdot \frac{P(X = x,\,Y = y)}{P(Y = y)} \cdot P(Y = y) \\
+    &= \sum_{y}\sum_{x} x \cdot P(X = x,\,Y = y) \\
+    &= \sum_{x} x \sum_{y} P(X = x,\,Y = y) \\
+    &= \sum_{x} x \cdot P(X = x) \;=\; E[X]. \qedhere
+\end{align*}
+\end{proof}
+
+Applying this formula to our specific example, we must determine all of the
+possible ways for the sum to equal $4$.  The full list of possibilities is:
+
+\medskip
+When $N = 1$, we must have $X_1 = 4$.
+
+When $N = 2$, we must have $(X_1 = 2,\,X_2 = 2)$, or $(X_1 = 1,\,X_2 = 3)$,
+or $(X_1 = 3,\,X_2 = 1)$.
+
+When $N = 3$, we must have $(X_1 = 2,\,X_2 = 1,\,X_3 = 1)$,
+or $(X_1 = 1,\,X_2 = 2,\,X_3 = 1)$, or $(X_1 = 1,\,X_2 = 1,\,X_3 = 2)$.
+
+When $N = 4$, we must have $(X_1 = 1,\,X_2 = 1,\,X_3 = 1,\,X_4 = 1)$.
+
+\medskip\noindent
+We know that
+\begin{align*}
+    P(N = 1) &= \frac{e^{-3}\,3^{1}}{1!} = e^{-3}\cdot 3, \\
+    P(N = 2) &= \frac{e^{-3}\,3^{2}}{2!} = e^{-3}\cdot\frac{9}{2}, \\
+    P(N = 3) &= \frac{e^{-3}\,3^{3}}{3!} = e^{-3}\cdot\frac{27}{6}, \\
+    P(N = 4) &= \frac{e^{-3}\,3^{4}}{4!} = e^{-3}\cdot\frac{81}{24}.
+\end{align*}
+So, we apply $P(S_N = 4) = \sum_{n=1}^{4} P(S_N = 4 \mid N = n)\,P(N = n)$
+and we have,
+\begin{align*}
+P(S_N = 4)
+    &= \bigl(e^{-3}\cdot 3\bigr)(0.25)
+     + \Bigl(e^{-3}\cdot\tfrac{9}{2}\Bigr)
+       \bigl((0.4)^{2} + 2(0.05\cdot 0.1)\bigr) \\
+    &\quad
+     + \Bigl(e^{-3}\cdot\tfrac{27}{6}\Bigr)3\,(0.05)^{2}(0.4)
+     + \Bigl(e^{-3}\cdot\tfrac{81}{24}\Bigr)(0.05)^{4} \\[4pt]
+    &= e^{-3}\!\left[
+         (3\cdot 0.25)
+         + \frac{9}{2}\bigl((0.4)^{2} + 2(0.05\cdot 0.1)\bigr)
+         + \frac{27}{6}\cdot 3\,(0.05)^{2}(0.4)
+         + \frac{81}{24}\,(0.05)^{4}
+       \right] \\
+    &= e^{-3} \cdot 1.528521094.
+\end{align*}
+With this intuitive example in mind, we now calculate this same compound random
+variable using the formula from Corollary~1.
 
 So we have,
 \begin{align*}
@@ -400,6 +460,8 @@ P(S_N = 4)
        + 0.3(0.15\,e^{-3}) + e^{-3}\bigr] \\
     &= 1.528521094\,e^{-3}.
 \end{align*}
+Note that this result agrees with the value $e^{-3} \cdot 1.528521094$ obtained above
+via the law of total probability, confirming the two methods are consistent.
 \end{example}
 
 %% ------ Example 2: Negative Binomial ------
