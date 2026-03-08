@@ -49,6 +49,8 @@ class MixedCompoundRV:
         self.claim_probs = claim_probs
         self._validate_inputs()
         self._cache = {}
+        self._op_count = 0
+        self._op_count_uncached = 0
     
     def _validate_inputs(self):
         """Validate that weights sum to 1 and claim probs sum to 1."""
@@ -185,18 +187,18 @@ class MixedCompoundRV:
     def compute_prob(self, k: int, s: int = 0) -> float:
         """
         Compute P_s(S_N = k) using the recursive formula from Corollary 3.
-        
+
         P_s(S_N = k) = (E[N^(s)] / k) * sum(i * α_i * P_{s+1}(S_N = k - i), i=1..k)
-        
+
         Base case: P_s(S_N = 0) = P(N^(s) = 0)
-        
+
         Parameters
         ----------
         k : int
             The target value for S_N
         s : int
             The recursion level (default 0 for initial call)
-        
+
         Returns
         -------
         float
@@ -206,28 +208,29 @@ class MixedCompoundRV:
         cache_key = (k, s)
         if cache_key in self._cache:
             return self._cache[cache_key]
-        
+
         # Base case
         if k == 0:
             result = self._pmf_mixture_at_level(s, 0)
             self._cache[cache_key] = result
             return result
-        
+
         if k < 0:
             return 0.0
-        
+
         # Recursive case
         e_n = self._get_expected_value_mixture(s)
-        
+
         total = 0.0
         max_claim = max(self.claim_probs.keys())
-        
+
         for i in range(1, min(k, max_claim) + 1):
             if i in self.claim_probs:
                 alpha_i = self.claim_probs[i]
                 p_next = self.compute_prob(k - i, s + 1)
                 total += i * alpha_i * p_next
-        
+                self._op_count += 1  # count each term in the convolution sum
+
         result = (e_n / k) * total
         self._cache[cache_key] = result
         return result
@@ -235,23 +238,80 @@ class MixedCompoundRV:
     def compute_distribution(self, max_k: int) -> dict:
         """
         Compute P(S_N = k) for k = 0, 1, ..., max_k.
-        
+
         Parameters
         ----------
         max_k : int
             Maximum value of k to compute
-        
+
         Returns
         -------
         dict
             Mapping from k to P(S_N = k)
         """
         self._cache = {}  # Clear cache for fresh computation
+        self._op_count = 0
         return {k: self.compute_prob(k) for k in range(max_k + 1)}
     
     def clear_cache(self):
-        """Clear the computation cache."""
+        """Clear the computation cache and operation counter."""
         self._cache = {}
+        self._op_count = 0
+
+    def compute_prob_uncached(self, k: int, s: int = 0) -> float:
+        """
+        Identical recursive formula to compute_prob but with NO memoization.
+
+        Every subproblem is recomputed from scratch on every call, exposing the
+        full exponential call tree.  Only used for counting operations so that
+        the benefit of caching can be quantified.
+        """
+        if k == 0:
+            self._op_count_uncached += 1  # base-case evaluation
+            return self._pmf_mixture_at_level(s, 0)
+
+        if k < 0:
+            return 0.0
+
+        e_n = self._get_expected_value_mixture(s)
+        total = 0.0
+        max_claim = max(self.claim_probs.keys())
+
+        for i in range(1, min(k, max_claim) + 1):
+            if i in self.claim_probs:
+                alpha_i = self.claim_probs[i]
+                p_next = self.compute_prob_uncached(k - i, s + 1)
+                total += i * alpha_i * p_next
+                self._op_count_uncached += 1
+
+        return (e_n / k) * total
+
+    def count_ops_uncached(self, k: int) -> int:
+        """Return the operation count for compute_prob_uncached(k)."""
+        self._op_count_uncached = 0
+        self.compute_prob_uncached(k)
+        return self._op_count_uncached
+
+    def count_ops_for_k(self, k: int) -> int:
+        """
+        Return the number of convolution-sum operations needed to compute P(S_N = k)
+        from scratch (empty cache).
+        """
+        self.clear_cache()
+        self.compute_prob(k)
+        return self._op_count
+
+    def peak_memory_for_k(self, k: int) -> int:
+        """
+        Return the number of cached values stored after computing P(S_N = k).
+
+        For the recursive method all intermediate results accumulate in the
+        cache and are never discarded, so peak memory equals the total number
+        of unique (value, level) pairs that were computed.
+        """
+        self.clear_cache()
+        self.compute_prob(k)
+        return len(self._cache)
 
 
 # ============================================================================
@@ -661,12 +721,12 @@ def run_all_tests():
 # SIMULATION VS RECURSIVE COMPARISON
 # ============================================================================
 
-def compare_simulation_vs_recursive(name: str, components: List[Tuple], 
+def compare_simulation_vs_recursive(name: str, components: List[Tuple],
                                      claim_probs: dict, max_k: int = 10,
                                      n_simulations: int = 500000):
     """
-    Compare simulation estimates with recursive computation.
-    
+    Compare simulation estimates with both the recursive and LTP exact methods.
+
     Parameters
     ----------
     name : str
@@ -680,46 +740,63 @@ def compare_simulation_vs_recursive(name: str, components: List[Tuple],
     n_simulations : int
         Number of simulation iterations
     """
-    print(f"\n{'=' * 70}")
+    print(f"\n{'=' * 85}")
     print(f"COMPARISON: {name}")
     print(f"Simulations: {n_simulations:,}")
-    print(f"{'=' * 70}")
-    
+    print(f"{'=' * 85}")
+
     # Recursive computation
     recursive_model = MixedCompoundRV(components, claim_probs)
     recursive_probs = recursive_model.compute_distribution(max_k)
-    
+
+    # LTP computation
+    ltp_model = LTPCompoundRV(components, claim_probs)
+    ltp_probs = ltp_model.compute_distribution(max_k)
+
     # Simulation
     simulator = CompoundRVSimulator(components, claim_probs, seed=42)
     simulated_probs = simulator.estimate_distribution(max_k, n_simulations)
-    
+
     # Compare results
-    print(f"\n{'k':>4}  {'Recursive':>14}  {'Simulated':>14}  {'Abs Diff':>12}  {'Rel Diff':>10}")
-    print("-" * 60)
-    
-    total_abs_error = 0.0
-    max_rel_error = 0.0
-    
+    print(f"\n{'k':>4}  {'Recursive':>14}  {'LTP':>14}  {'Simulated':>14}"
+          f"  {'|Rec-Sim|':>11}  {'|LTP-Sim|':>11}")
+    print("-" * 80)
+
+    total_abs_error_rec = 0.0
+    total_abs_error_ltp = 0.0
+    max_rel_error_rec = 0.0
+    max_rel_error_ltp = 0.0
+
     for k in range(max_k + 1):
         rec = recursive_probs[k]
+        ltp = ltp_probs[k]
         sim = simulated_probs[k]
-        abs_diff = abs(rec - sim)
-        rel_diff = abs_diff / rec if rec > 1e-10 else 0.0
-        
-        total_abs_error += abs_diff
-        max_rel_error = max(max_rel_error, rel_diff)
-        
-        print(f"{k:>4}  {rec:>14.10f}  {sim:>14.10f}  {abs_diff:>12.2e}  {rel_diff:>9.2%}")
-    
-    print("-" * 60)
-    print(f"Total absolute error: {total_abs_error:.6f}")
-    print(f"Maximum relative error: {max_rel_error:.2%}")
-    
-    # Check if simulation converged reasonably
-    # With 500k samples, we expect relative errors generally under 5%
-    passed = max_rel_error < 0.10  # Allow 10% max relative error
+        abs_diff_rec = abs(rec - sim)
+        abs_diff_ltp = abs(ltp - sim)
+        rel_diff_rec = abs_diff_rec / rec if rec > 1e-10 else 0.0
+        rel_diff_ltp = abs_diff_ltp / ltp if ltp > 1e-10 else 0.0
+
+        total_abs_error_rec += abs_diff_rec
+        total_abs_error_ltp += abs_diff_ltp
+        max_rel_error_rec = max(max_rel_error_rec, rel_diff_rec)
+        max_rel_error_ltp = max(max_rel_error_ltp, rel_diff_ltp)
+
+        print(f"{k:>4}  {rec:>14.10f}  {ltp:>14.10f}  {sim:>14.10f}"
+              f"  {abs_diff_rec:>11.2e}  {abs_diff_ltp:>11.2e}")
+
+    print("-" * 80)
+    print(f"{'Total abs error':>22}  {'Recursive:':>10} {total_abs_error_rec:.6f}"
+          f"  {'LTP:':>5} {total_abs_error_ltp:.6f}")
+    print(f"{'Max rel error':>22}  {'Recursive:':>10} {max_rel_error_rec:.2%}"
+          f"  {'LTP:':>5} {max_rel_error_ltp:.2%}")
+
+    # Both exact methods should agree closely; check simulation convergence
+    max_exact_diff = max(abs(recursive_probs[k] - ltp_probs[k]) for k in range(max_k + 1))
+    print(f"{'Max |Rec - LTP|':>22}  {max_exact_diff:.2e}  (exact methods agree)")
+
+    passed = max(max_rel_error_rec, max_rel_error_ltp) < 0.10
     print(f"\nConvergence check (max rel error < 10%): {'PASSED' if passed else 'FAILED'}")
-    
+
     return passed
 
 
@@ -864,9 +941,385 @@ def get_all_examples() -> Dict[str, Tuple[List[Tuple], dict]]:
 
 
 
+# ============================================================================
+# LAW OF TOTAL PROBABILITY METHOD
+# ============================================================================
+
+class LTPCompoundRV:
+    """
+    Computes P(S_N = k) for a compound random variable via the Law of Total Probability.
+
+        P(S_N = k) = sum_{n=0}^{k} P(N = n) * P(X_1 + ... + X_n = k)
+
+    The conditional probability P(X_1 + ... + X_n = k) is built up iteratively
+    via n-fold convolution of the claim size distribution.
+
+    Since P(X_i >= 1) = 1, exactly n claims cannot exceed k when n > k, so the
+    sum is finite and exact.
+
+    Parameters
+    ----------
+    components : List of tuples (dist_type, params, weight)
+        Same format as MixedCompoundRV.
+    claim_probs : dict
+        P(X_1 = i) = α_i for i = 1, 2, 3, ...
+    """
+
+    def __init__(self, components: List[Tuple], claim_probs: dict):
+        self.components = components
+        self.claim_probs = claim_probs
+        self._op_count = 0
+        self._peak_memory = 0  # peak number of floats stored simultaneously in f
+
+    def _pmf_N(self, n: int) -> float:
+        """P(N = n) for the mixture at level s=0."""
+        total = 0.0
+        for dist_type, params, weight in self.components:
+            pmf = 0.0
+            if dist_type == DistributionType.POISSON:
+                lam = params["lambda"]
+                # Use log-space to avoid overflow for large n
+                log_pmf = -lam + n * math.log(lam) - math.lgamma(n + 1)
+                pmf = math.exp(log_pmf)
+            elif dist_type == DistributionType.BINOMIAL:
+                r, p = params["r"], params["p"]
+                if 0 <= n <= r:
+                    pmf = math.comb(r, n) * (p ** n) * ((1 - p) ** (r - n))
+            elif dist_type == DistributionType.NEGATIVE_BINOMIAL:
+                r, p = params["r"], params["p"]
+                # Use log-space to avoid overflow for large n
+                log_pmf = (math.lgamma(n + r) - math.lgamma(n + 1) - math.lgamma(r)
+                           + r * math.log(p) + n * math.log(1 - p))
+                pmf = math.exp(log_pmf)
+            total += weight * pmf
+        return total
+
+    def compute_prob(self, k: int) -> float:
+        """
+        Compute P(S_N = k) via the Law of Total Probability.
+
+        Iteratively builds the n-fold convolution f_n(j) = P(X_1+...+X_n = j)
+        for n = 0, 1, ..., k and accumulates the weighted sum.
+
+        Parameters
+        ----------
+        k : int
+            The target value for S_N.
+
+        Returns
+        -------
+        float
+            P(S_N = k)
+        """
+        self._op_count = 0
+        self._peak_memory = 0
+
+        # f maps j -> P(X_1 + ... + X_n = j) for the current n.
+        # Start with n=0: the empty sum equals 0 with probability 1.
+        f = {0: 1.0}
+        self._peak_memory = max(self._peak_memory, len(f))
+
+        result = 0.0
+        for n in range(0, k + 1):
+            p_n = self._pmf_N(n)
+            f_n_k = f.get(k, 0.0)
+            result += p_n * f_n_k   # one multiply per n
+            self._op_count += 1
+
+            if n < k:
+                # Advance: compute f_{n+1}(j) for j = 1..k
+                f_new = {}
+                for j in range(1, k + 1):
+                    val = 0.0
+                    for i, alpha_i in self.claim_probs.items():
+                        prev = f.get(j - i, 0.0)
+                        if prev != 0.0:
+                            val += alpha_i * prev
+                            self._op_count += 1  # one multiply per claim size term
+                    if val != 0.0:
+                        f_new[j] = val
+                f = f_new
+                self._peak_memory = max(self._peak_memory, len(f))
+
+        return result
+
+    def compute_distribution(self, max_k: int) -> dict:
+        """
+        Compute P(S_N = k) for k = 0, 1, ..., max_k in a single pass.
+
+        Builds the n-fold convolution iteratively and accumulates the
+        weighted sum P(N=n) * f_n(k) for every k simultaneously.
+
+        Parameters
+        ----------
+        max_k : int
+            Maximum value of k to compute.
+
+        Returns
+        -------
+        dict
+            Mapping from k to P(S_N = k).
+        """
+        self._op_count = 0
+        self._peak_memory = 0
+
+        result = {k: 0.0 for k in range(max_k + 1)}
+        f = {0: 1.0}
+        self._peak_memory = max(self._peak_memory, len(f))
+
+        for n in range(0, max_k + 1):
+            p_n = self._pmf_N(n)
+            for j, f_val in f.items():
+                result[j] += p_n * f_val
+                self._op_count += 1
+
+            if n < max_k:
+                f_new = {}
+                for j in range(1, max_k + 1):
+                    val = 0.0
+                    for i, alpha_i in self.claim_probs.items():
+                        prev = f.get(j - i, 0.0)
+                        if prev != 0.0:
+                            val += alpha_i * prev
+                            self._op_count += 1
+                    if val != 0.0:
+                        f_new[j] = val
+                f = f_new
+                self._peak_memory = max(self._peak_memory, len(f))
+
+        return result
+
+    def count_ops_for_k(self, k: int) -> int:
+        """Return the operation count for computing P(S_N = k)."""
+        self.compute_prob(k)
+        return self._op_count
+
+    def peak_memory_for_k(self, k: int) -> int:
+        """Return the peak number of stored floats when computing P(S_N = k)."""
+        self.compute_prob(k)
+        return self._peak_memory
+
+
+# ============================================================================
+# INTUITIVE EXAMPLE AND COMPUTATION COUNT COMPARISON
+# ============================================================================
+
+def test_intuitive_example_ltp():
+    """
+    Reproduce the intuitive example from the thesis using the Law of Total Probability.
+
+    N ~ Poisson(λ=3), claim distribution {1:0.05, 2:0.4, 3:0.1, 4:0.25, 5:0.2}.
+    Expected: P(S_N = 4) = e^{-3} * 1.528521094
+    """
+    print("=" * 60)
+    print("Intuitive Example: Law of Total Probability (LTP)")
+    print("N ~ Poisson(λ=3)")
+    print("=" * 60)
+
+    claim_probs = {1: 0.05, 2: 0.4, 3: 0.1, 4: 0.25, 5: 0.2}
+    components = [(DistributionType.POISSON, {"lambda": 3}, 1.0)]
+
+    ltp_model = LTPCompoundRV(components, claim_probs)
+    result = ltp_model.compute_prob(4)
+    expected = 1.528521094 * math.exp(-3)
+
+    print(f"Computed P(S_N = 4) = {result:.10f}")
+    print(f"Expected P(S_N = 4) = {expected:.10f}")
+    print(f"Difference:           {abs(result - expected):.2e}")
+    print(f"Test PASSED: {math.isclose(result, expected, rel_tol=1e-6)}\n")
+
+    # Show the step-by-step breakdown matching the thesis
+    print("Step-by-step LTP breakdown (conditioning on N):")
+    lam = 3.0
+    e_neg3 = math.exp(-3)
+    for n in range(0, 5):
+        p_n = math.exp(-lam) * (lam ** n) / math.factorial(n)
+        # rebuild f_n(4) manually for display
+        f = {0: 1.0}
+        for _ in range(n):
+            f_new = {}
+            for j in range(1, 5):
+                val = sum(claim_probs.get(i, 0) * f.get(j - i, 0)
+                          for i in range(1, j + 1))
+                if val != 0.0:
+                    f_new[j] = val
+            f = f_new
+        f_n_4 = f.get(4, 0.0)
+        term = p_n * f_n_4
+        coeff = p_n / e_neg3
+        print(f"  n={n}: P(N={n})={coeff:.6f}*e^(-3), "
+              f"P(sum={4}|N={n})={f_n_4:.8f}, "
+              f"term={term / e_neg3:.8f}*e^(-3)")
+
+    return math.isclose(result, expected, rel_tol=1e-6)
+
+
+def compare_computation_counts(k_values: List[int] = None):
+    """
+    Compare the number of operations between the recursive Panjer method
+    and the Law of Total Probability method at various values of k.
+
+    For both methods, an 'operation' is one multiplication of a claim
+    probability (α_i) by a previously-computed probability value inside
+    the key convolution sum — the dominant repeated computation in each
+    algorithm.
+
+    Parameters
+    ----------
+    k_values : list of int
+        Values of k to compare. Defaults to [1, 2, 3, 5, 10, 20, 30, 50].
+    """
+    if k_values is None:
+        k_values = [1, 2, 3, 5, 10, 20, 50, 100, 200]
+
+    claim_probs = {1: 0.05, 2: 0.4, 3: 0.1, 4: 0.25, 5: 0.2}
+    components = [(DistributionType.POISSON, {"lambda": 3}, 1.0)]
+
+    print("\n" + "=" * 95)
+    print("COMPUTATION COUNT AND MEMORY COMPARISON: Recursive vs. Law of Total Probability")
+    print("N ~ Poisson(λ=3), claim distribution support {1,2,3,4,5}")
+    print("'Operations' = multiplications in the core convolution sum")
+    print("'Memory'     = peak number of probability values stored simultaneously")
+    print("               Recursive: all cache entries accumulate (never evicted)")
+    print("               LTP:       only the current convolution slice f_n is kept")
+    print("=" * 95)
+    header = (f"\n{'k':>5}  {'Rec Ops':>10}  {'LTP Ops':>10}  {'Op Ratio':>10}"
+              f"  {'Rec Mem':>10}  {'LTP Mem':>10}  {'Mem Ratio':>10}")
+    print(header)
+    print("-" * 75)
+
+    recursive_model = MixedCompoundRV(components, claim_probs)
+    ltp_model = LTPCompoundRV(components, claim_probs)
+
+    for k in k_values:
+        rec_ops = recursive_model.count_ops_for_k(k)
+        ltp_ops = ltp_model.count_ops_for_k(k)
+        rec_mem = recursive_model.peak_memory_for_k(k)
+        ltp_mem = ltp_model.peak_memory_for_k(k)
+        op_ratio = ltp_ops / rec_ops if rec_ops > 0 else float("inf")
+        mem_ratio = rec_mem / ltp_mem if ltp_mem > 0 else float("inf")
+        print(f"{k:>5}  {rec_ops:>10,}  {ltp_ops:>10,}  {op_ratio:>9.2f}x"
+              f"  {rec_mem:>10,}  {ltp_mem:>10,}  {mem_ratio:>9.2f}x")
+
+    print("-" * 75)
+    print()
+    print("Interpretation:")
+    print("  Operations: Both methods are O(k²); the recursive method has a slight")
+    print("    constant-factor advantage at small k via memoization, converging to")
+    print("    the same cost as k grows.")
+    print("  Memory: The recursive method's cache grows as O(k²) total entries and")
+    print("    is never freed. The LTP method discards each convolution slice after")
+    print("    use, so its peak storage is O(k) — one slice at a time.")
+
+
+def _estimate_uncached_ops(k: int, memo: dict = None) -> int:
+    """
+    Compute the uncached operation count via the recurrence, without
+    actually running the expensive recursion.
+
+    T(0) = 1
+    T(k) = min(k,5) + sum_{i=1}^{min(k,5)} T(k-i)
+    """
+    if memo is None:
+        memo = {}
+    if k in memo:
+        return memo[k]
+    if k == 0:
+        return 1
+    fan = min(k, 5)
+    result = fan + sum(_estimate_uncached_ops(k - i, memo) for i in range(1, fan + 1))
+    memo[k] = result
+    return result
+
+
+def compare_cached_vs_uncached(k_values: List[int] = None,
+                                uncached_limit: int = 18):
+    """
+    Demonstrate the benefit of caching in the recursive method by comparing
+    operation counts with and without memoization.
+
+    Without caching the recursion recomputes the same (value, level)
+    subproblems repeatedly, producing exponential growth.  The cache
+    eliminates all duplicate work, reducing the cost to O(k²).
+
+    Parameters
+    ----------
+    k_values : list of int
+        Values of k to compare.
+    uncached_limit : int
+        Maximum k for which the uncached version is actually executed.
+        Beyond this limit the count is estimated from the recurrence
+        (avoiding the multi-minute runtime of the true exponential tree).
+    """
+    if k_values is None:
+        k_values = [1, 2, 3, 5, 8, 10, 12, 15, 18, 20, 30, 50, 100]
+
+    claim_probs = {1: 0.05, 2: 0.4, 3: 0.1, 4: 0.25, 5: 0.2}
+    components = [(DistributionType.POISSON, {"lambda": 3}, 1.0)]
+    model = MixedCompoundRV(components, claim_probs)
+    recurrence_memo = {}
+
+    print("\n" + "=" * 80)
+    print("CACHING BENEFIT: Recursive Method With vs. Without Memoization")
+    print("N ~ Poisson(λ=3), claim distribution support {1,2,3,4,5}")
+    print("'Operations' = convolution-sum multiplications (α_i × probability)")
+    print(f"Uncached ops verified by execution for k ≤ {uncached_limit};")
+    print("  larger values estimated from the recurrence T(k) = min(k,5) +")
+    print("  sum_{i=1}^{min(k,5)} T(k-i), which matches execution exactly.")
+    print("=" * 80)
+    print(f"\n{'k':>5}  {'Cached':>12}  {'Uncached (est)':>16}  {'Speedup':>18}  {'Cache entries':>14}")
+    print("-" * 73)
+
+    for k in k_values:
+        cached_ops = model.count_ops_for_k(k)
+        cache_entries = len(model._cache)
+        estimated_uncached = _estimate_uncached_ops(k, recurrence_memo)
+        speedup = estimated_uncached / cached_ops if cached_ops > 0 else float("inf")
+
+        # Format large uncached counts in scientific notation
+        if estimated_uncached > 1e15:
+            uncached_str = f"{estimated_uncached:.3e}"
+        else:
+            uncached_str = f"{estimated_uncached:,}"
+
+        if speedup > 1e12:
+            speedup_str = f"{speedup:.2e}x"
+        else:
+            speedup_str = f"{speedup:,.1f}x"
+
+        if k <= uncached_limit:
+            actual_uncached = model.count_ops_uncached(k)
+            verified = "✓" if actual_uncached == estimated_uncached else "!"
+            print(f"{k:>5}  {cached_ops:>12,}  {uncached_str:>16} {verified}  "
+                  f"{speedup_str:>16}  {cache_entries:>14,}")
+        else:
+            print(f"{k:>5}  {cached_ops:>12,}  {uncached_str:>16}    "
+                  f"{speedup_str:>16}  {cache_entries:>14,}")
+
+    print("-" * 73)
+    print()
+    print("Interpretation:")
+    print("  Each unique (value, level) pair can be reached by multiple paths")
+    print("  through the recursion tree.  Without caching, every path recomputes")
+    print("  the subproblem from scratch.  The number of such paths grows")
+    print("  exponentially (~2^k), while the number of unique pairs grows as")
+    print("  O(k²).  Caching converts the algorithm from exponential to")
+    print("  polynomial time, at the cost of retaining all O(k²) cached values.")
+
+
 if __name__ == "__main__":
     # Run recursive computation tests
     recursive_passed = run_all_tests()
+
+    # Intuitive example via LTP
+    print("\n\n")
+    ltp_passed = test_intuitive_example_ltp()
+
+    # Caching benefit comparison
+    compare_cached_vs_uncached()
+
+    # Computation count comparison
+    compare_computation_counts()
 
     # Run simulation comparisons
     print("\n\n")
