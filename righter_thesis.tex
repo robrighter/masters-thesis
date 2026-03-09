@@ -2,7 +2,7 @@
 %%  Robert Righter – Master's Thesis in AMS Style
 %%  Recursive Computation with Finite-Mixture Count Distributions
 %% ===============================================================
-\documentclass{amsart}
+\documentclass[11pt]{amsart}
 
 \usepackage{amsmath}
 \usepackage{amsthm}
@@ -48,6 +48,8 @@
 \renewcommand{\l@section}{\@tocline{1}{0pt}{1pc}{2em}{}}
 \renewcommand{\l@subsection}{\@tocline{2}{0pt}{2pc}{3em}{}}
 \makeatother
+
+\AtEndEnvironment{proof}{\vspace{1.5\baselineskip}}
 
 \AtBeginEnvironment{definition}{\vspace{2.0\baselineskip}\begin{spacing}{1.5}}
 \AtEndEnvironment{definition}{\end{spacing}\vspace{1.5\baselineskip}}
