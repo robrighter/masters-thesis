@@ -170,6 +170,75 @@ closed-form expression that computes these recursive weights directly, thereby e
 some of the nested recursion and simplifying the calculation.
 
 %% ============================================================
+\section{Literature Review}
+%% ============================================================
+
+Compound random variables can be computed directly via the law of total probability by
+conditioning on the value of $N$ and convolving the claim size distribution, as described in
+Ross \cite{ross2010}. However, starting in 1981, alternative approaches were identified that
+utilize recursive algorithms to compute compound random variables more efficiently.
+
+\subsection{The Panjer Recursion}
+
+In 1981, Panjer introduced a recursive method for the computation of compound random
+variables when the counting distribution satisfies a particular recurrence relation
+\cite{panjer1981}. Panjer showed that if the counting distribution $N$ satisfied the recurrence
+relation,
+\[
+    P(N = n) = \left(a + \frac{b}{n}\right) \cdot P(N = n - 1), \quad
+    \text{where } n \in \mathbb{Z},\, n > 0,\, a, b \text{ are constants,}
+\]
+then $P(S_N = k)$ can be computed with a recursive formula. This eliminated the need to
+perform explicit convolutions and provided a simpler path for computing $P(S_N = k)$ when
+the criteria are met.
+
+Panjer's work was extended by Sundt and Jewell, also in 1981 \cite{sundt-jewell1981}. They
+proved that only three distribution families satisfy Panjer's recurrence relation, namely, the
+Poisson, Binomial, and Negative Binomial distribution, also called the $(a, b, 0)$ class. They
+also introduced a relaxed form of the recurrence relation in which the relation holds for
+$n = 2, 3, \ldots$ instead of $n = 1, 2, 3, \ldots$, allowing a different initial value at $n = 0$.
+This enabled Panjer's recursive calculations to be extended to counting distributions such as
+the truncated negative binomial and related zero-modified distributions, collectively called the
+$(a, b, 1)$ class.
+
+Subsequent work by Willmot sought to extend the Panjer framework to accommodate
+counting distributions formed by mixing members of the $(a, b, 0)$ class. In 1993, Willmot
+derived recursive computation methods for mixed Poisson distributions in which the Poisson
+parameter is itself a random variable drawn from a continuous mixing distribution
+\cite{willmot1993}. In certain cases, such as the Poisson-Gamma mixture which yields the
+Negative Binomial, the resulting marginal distribution remains within the Panjer class and
+therefore satisfies the required recurrence relation. However, this approach is limited to
+continuous mixtures that collapse into a single known distribution. It does not extend to
+discrete finite mixtures where the counting distribution is a weighted combination of
+distributions with fixed parameters, such as a mixture of a Poisson and a Negative Binomial.
+
+Panjer recursion remains the standard tool for computation of compound random variables
+in actuarial science \cite{klugman2012}. However, the method is limited to a specific set of
+counting distributions that satisfy the recurrence relations.
+
+\subsection{The Compound Random Variable Identity}
+
+In the 2003 eighth edition of his textbook \emph{Introduction to Probability Models}, Ross
+introduced an identity for compound Poisson random variables and used it to derive a
+recursive formula for computing their probability mass function \cite{ross2010}. Building on
+this, Pek\"{o}z and Ross published a paper in 2004 providing a probabilistic proof of the
+general identity and applying it to derive recursive formulas for compound random variables
+when the counting distribution is Poisson, Binomial, Negative Binomial, hypergeometric,
+logarithmic, or negative hypergeometric \cite{pekoz-ross}. This approach introduces a
+size-biased auxiliary random variable $M$, defined as
+\[
+    P(M = n) = \frac{n\, P(N = n)}{E[N]}, \quad n = 1, 2, 3, \ldots
+\]
+Unlike the Panjer recursion, this approach does not require the counting distribution to
+satisfy a specific recurrence relation. However, it does introduce a nuance of recursive
+depth wherein the distribution of $M - 1$ must be determined at each level of recursion. For
+the Panjer-class distributions, the distribution of $M - 1$ at each recursion level can be
+expressed in closed form. In the Poisson case, it is identical to the original distribution; in
+the Binomial and Negative Binomial cases, it is the same family with a shifted parameter.
+Pek\"{o}z and Ross applied the identity to each of these distributions individually but did not
+explore the case where the counting distribution is a finite mixture.
+
+%% ============================================================
 \section{Background}
 %% ============================================================
 
@@ -188,7 +257,7 @@ the sequence $X_1, X_2, \ldots, X_n$.  Then,
 \[
     S_N = \sum_{i=1}^{N} X_i
 \]
-is a \emph{compound random variable}.
+is a \emph{compound random variable} \cite{ross2010}.
 \end{definition}
 
 \begin{definition}
@@ -198,7 +267,7 @@ distribution}.
 
 
 
-\begin{theorem}[Compound Random Variable Identity]
+\begin{theorem}[Compound Random Variable Identity {\cite{ross2010, pekoz-ross}}]
 Let $M$ be a random variable that is independent of the sequence of random variables
 $X_1, X_2, \ldots, X_n$ that forms a compound random variable and $M$ satisfies
 \[
@@ -242,7 +311,7 @@ Then, by substitution of $P(M = n) = \dfrac{n\,P(N=n)}{E[N]}$, we have
 \end{align*}
 \end{proof}
 
-\begin{corollary}\label{cor:main}
+\begin{corollary}[{\cite{pekoz-ross}}]\label{cor:main}
 Let $S_N$ be a compound random variable and suppose $X_1, X_2, \ldots, X_n$ are positive
 integer valued random variables.  Suppose $P(X_1 = i) = \alpha_i$, $i > 0$, and $M$ is a
 random variable that is independent of the sequence $X_1, X_2, \ldots, X_n$ and satisfies
@@ -335,6 +404,7 @@ Find $P(S_N = 4)$.
 
 %% ------ Example 1: Poisson ------
 \begin{example}[N in the Poisson Distribution]\label{ex:poisson}
+\addcontentsline{toc}{subsection}{Example~\theexample: N in the Poisson Distribution}
 Let $N$ be a random variable of the Poisson distribution with parameter $\lambda = 3$.
 So the probability mass function for the distribution of $N$ is
 \[
@@ -476,6 +546,7 @@ via the law of total probability, confirming the two methods are consistent.
 
 %% ------ Example 2: Negative Binomial ------
 \begin{example}[N in the Negative Binomial Distribution]\label{ex:negbin}
+\addcontentsline{toc}{subsection}{Example~\theexample: N in the Negative Binomial Distribution}
 Let $N$ be a random variable of the negative binomial distribution with parameters
 $r = 6$ and $p = 0.6$.  The probability mass function for the distribution of $N^{(s)}$ at
 recursion level $s$ is
@@ -624,6 +695,7 @@ P^{(0)}(S_N = 4)
 
 %% ------ Example 3: Binomial ------
 \begin{example}[N in the Binomial Distribution]\label{ex:binom}
+\addcontentsline{toc}{subsection}{Example~\theexample: N in the Binomial Distribution}
 Let $N$ be a random variable of the Binomial distribution with parameters $r = 6$ and
 $p = 0.6$.  The probability mass function for the distribution of $N^{(s)}$ at recursion
 level $s$ is
@@ -757,6 +829,7 @@ We will now consider the computation of compound random variable probabilities w
 counting distribution is a mixture of Poisson distributions.
 
 \begin{example}[N in a Finite Mixture of Two Poisson Distributions]\label{ex:poisson-mix}
+\addcontentsline{toc}{subsection}{Example~\theexample: N in a Finite Mixture of Two Poisson Distributions}
 Consider a discrete mixture distribution where the event is generated by one of two random
 processes.  The event is either generated by process one, which follows a Poisson
 distribution with mean $\lambda_1$, or process two, which follows a Poisson distribution
@@ -1042,6 +1115,7 @@ we arrive at the updated recursive equation
 \]
 
 \begin{example}[Revisiting Example~\ref{ex:poisson}]\label{ex:revisit-poisson}
+\addcontentsline{toc}{subsection}{Example~\theexample: Revisiting Example~\protect\ref{ex:poisson}}
 Now we can compute the same compound random variable from
 Example~\ref{ex:poisson}, but with our updated recursive equation.  Like before, let $N$ be
 a random variable of the Poisson distribution with parameter $\lambda_1 = 3$.  So the
@@ -1093,6 +1167,7 @@ Notice, this is the same as our result from Example~\ref{ex:poisson}.
 \end{example}
 
 \begin{example}[Revisiting Example~\ref{ex:poisson-mix}]\label{ex:revisit-mix}
+\addcontentsline{toc}{subsection}{Example~\theexample: Revisiting Example~\protect\ref{ex:poisson-mix}}
 We will consider again the case of a discrete mixture distribution where the event is
 generated by one of two random processes.  The event is either generated by process one,
 which follows a Poisson distribution with mean $\lambda_1$, or process two, which follows
@@ -1341,6 +1416,7 @@ that is, $(r - s)$ for the binomial distribution, $(r + s)$ for the negative bin
 distribution and no parameter change for the Poisson distribution.
 
 \begin{example}[N in a Finite Mixture of Binomial Distributions]\label{ex:binom-mix}
+\addcontentsline{toc}{subsection}{Example~\theexample: N in a Finite Mixture of Binomial Distributions}
 Consider a discrete mixture distribution where the event is generated by one of two random
 processes.  The event is either generated by process one, which follows a Binomial
 distribution with $r_1 = 8$ and $p_1 = 0.5$, or process two, which follows a Binomial
@@ -1481,6 +1557,7 @@ P^{(0)}(S_N = 4)
 
 \begin{example}[N in a Finite Mixture of Negative Binomial Distributions]
 \label{ex:negbin-mix}
+\addcontentsline{toc}{subsection}{Example~\theexample: N in a Finite Mixture of Negative Binomial Distributions}
 Consider a discrete mixture distribution where the event is generated by one of two random
 processes.  The event is either generated by process one, which follows a Negative Binomial
 distribution with $r_1 = 4$ and $p_1 = 0.6$, or process two, which follows a Negative
@@ -1616,6 +1693,7 @@ P^{(0)}(S_N = 4)
 
 \begin{example}[N in a Finite Mixture of Poisson, Binomial and Negative Binomial
 Distributions]\label{ex:full-mix}
+\addcontentsline{toc}{subsection}{Example~\theexample: N in a Finite Mixture of Poisson, Binomial and Negative Binomial Distributions}
 Consider a discrete mixture distribution where the event is generated by one of three
 random processes.  The event is either generated by process one, which follows a Poisson
 distribution with $\lambda = 3$, or process two, which follows a Binomial distribution with
@@ -1758,6 +1836,25 @@ P^{(0)}(S_N = 4)
 
 \newpage
 %% ============================================================
+\section{Computational Analysis}
+%% ============================================================
+
+% TODO: Add computational analysis content here.
+% This section should present numerical comparisons between the direct
+% law of total probability method and the recursive methods developed in
+% this thesis, including timing, accuracy, and complexity results.
+
+\newpage
+%% ============================================================
+\section{Closing Statements}
+%% ============================================================
+
+% TODO: Add closing statements / conclusion here.
+% This section should summarize the main contributions of the thesis,
+% discuss limitations, and suggest directions for future work.
+
+\newpage
+%% ============================================================
 %  Bibliography (placeholder — update with actual references)
 %% ============================================================
 \begin{thebibliography}{9}
@@ -1779,6 +1876,14 @@ Distributions,'' \emph{ASTIN Bulletin}, vol.~12, pp.~27--39, 1981.
 \bibitem{panjer1981}
 H. H. Panjer, ``Recursive Evaluation of a Family of Compound Distributions,''
 \emph{ASTIN Bulletin}, vol.~12, 1981.
+
+\bibitem{willmot1993}
+G. E. Willmot, ``On Recursive Evaluation of Mixed Poisson Probabilities and Related
+Quantities,'' \emph{Scandinavian Actuarial Journal}, vol.~2, pp.~114--133, 1993.
+
+\bibitem{klugman2012}
+S. A. Klugman, H. H. Panjer, and G. E. Willmot, \emph{Loss Models: From Data to
+Decisions}, 4th ed., Wiley, Hoboken, NJ, 2012.
 
 \end{thebibliography}
 
