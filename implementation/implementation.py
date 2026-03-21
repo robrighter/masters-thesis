@@ -49,6 +49,7 @@ class MixedCompoundRV:
         self.claim_probs = claim_probs
         self._validate_inputs()
         self._cache = {}
+        self._weights_cache = {}
         self._op_count = 0
         self._op_count_uncached = 0
     
@@ -88,11 +89,16 @@ class MixedCompoundRV:
     def _get_weights_at_level(self, s: int) -> List[float]:
         """
         Compute the mixing weights β_j^(s) at recursion level s.
-        
+
         β_j^(s+1) = β_j^(s) * E[N_j^(s)] / E[N^(s)]
         """
+        if s in self._weights_cache:
+            return self._weights_cache[s]
+
         if s == 0:
-            return [c[2] for c in self.components]
+            result = [c[2] for c in self.components]
+            self._weights_cache[0] = result
+            return result
         
         # Get weights at level s-1
         prev_weights = self._get_weights_at_level(s - 1)
@@ -120,7 +126,8 @@ class MixedCompoundRV:
             prev_weights[j] * component_expectations[j] / total_expectation
             for j in range(len(self.components))
         ]
-        
+
+        self._weights_cache[s] = new_weights
         return new_weights
     
     def _get_expected_value_mixture(self, s: int) -> float:
@@ -250,12 +257,14 @@ class MixedCompoundRV:
             Mapping from k to P(S_N = k)
         """
         self._cache = {}  # Clear cache for fresh computation
+        self._weights_cache = {}
         self._op_count = 0
         return {k: self.compute_prob(k) for k in range(max_k + 1)}
     
     def clear_cache(self):
         """Clear the computation cache and operation counter."""
         self._cache = {}
+        self._weights_cache = {}
         self._op_count = 0
 
     def compute_prob_uncached(self, k: int, s: int = 0) -> float:
