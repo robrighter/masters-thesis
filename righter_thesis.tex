@@ -12,6 +12,7 @@
 \usepackage{titlesec}
 \usepackage{setspace}
 \usepackage{etoolbox}
+\usepackage{url}
 \allowdisplaybreaks
 
 %% ------ Spacing ------
@@ -1839,10 +1840,53 @@ P^{(0)}(S_N = 4)
 \section{Computational Analysis}
 %% ============================================================
 
-% TODO: Add computational analysis content here.
-% This section should present numerical comparisons between the direct
-% law of total probability method and the recursive methods developed in
-% this thesis, including timing, accuracy, and complexity results.
+Computational analysis was conducted to compare accuracy of results, number of
+evaluations required, and memory used when utilizing the recursive algorithm defined in
+Corollary~3 as compared to the convolutional Law of Total Probability method discussed in
+the first example.
+
+\subsection{Accuracy}
+
+The computation results of both methods agreed to a level of precision up to the precision
+of the underlying numeric data structure of the programming language ($\cong 10^{-10}$).
+This level of accuracy was consistent throughout all the examples. The results were further
+validated against a Monte Carlo simulation of 500,000 draws simulating the results of each
+of the examples at various levels of $K$. All results agreed with the Monte Carlo simulated
+values within less than 6\% relative error. Therefore, the computational analysis provided
+clear validation of the accuracy of the method.
+
+\subsection{Memory Usage}
+
+The implementation of both methods requires the use of memoization. Without memoization
+the recursion tree requires both methods to recompute every subproblem and the number of
+evaluations grows exponentially. This would make computation untenable at levels of
+$k \geq 20$. Memory usage was measured as the number of evaluations cached in the process
+of computing a result. The recursive method required an $O(k^2)$ level of storage to
+compute a result. The recursive method's evaluations accumulate in memory and are never
+evicted. The Law of Total Probability method required an $O(k)$ level of storage as only
+the current convolution slice is held in memory and previous slices are evicted. The Law
+of Total Probability method had a clear advantage over the recursive method in memory
+usage.
+
+\subsection{Evaluation Efficiency}
+
+Evaluation efficiency was measured between methods by counting the number of
+convolution-sum multiplications. For the recursive method this is the count of
+$(i \cdot \alpha_i \cdot P_{s+1})$ evaluations computed to arrive at a result. For the Law
+of Total Probability method this is the count of $(\alpha_i \cdot f_{n-1}(j - i))$
+evaluations computed to arrive at a result. Both methods resulted in an evaluation
+efficiency of $O(k^2)$ level of complexity. The recursive method has a slight advantage at
+small values of $k$ but the number of evaluations converges to 1 to 1 by $k = 200$.
+
+Overall, the new recursive algorithm defined in Corollary~3 does not offer a computational
+advantage over the pre-existing Law of Total Probability convolutional method. In fact, it
+is at a computational disadvantage in that it requires significantly more memory to compute
+its results efficiently. The value of the recursive method lies in the algebraic result
+itself. The closed-form weight update and the proof that the framework extends to finite
+mixtures is not in runtime or memory efficiency.
+
+The implementation and its output can be found at
+\url{https://github.com/robrighter/masters-thesis/tree/main/implementation}.
 
 \newpage
 %% ============================================================
