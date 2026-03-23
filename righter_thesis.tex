@@ -60,6 +60,8 @@
 \AtEndEnvironment{theorem}{\end{spacing}\vspace{1.5\baselineskip}}
 \AtBeginEnvironment{corollary}{\vspace{2.0\baselineskip}\begin{spacing}{1.5}}
 \AtEndEnvironment{corollary}{\end{spacing}\vspace{1.5\baselineskip}}
+\AtBeginEnvironment{proposition}{\vspace{2.0\baselineskip}\begin{spacing}{1.5}}
+\AtEndEnvironment{proposition}{\end{spacing}\vspace{1.5\baselineskip}}
 
 %% ------ Theorem-style Environments ------
 \theoremstyle{definition}
@@ -69,6 +71,7 @@
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
 \newtheorem{corollary}{Corollary}
+\newtheorem{proposition}{Proposition}
 
 %% ------ Title Block ------
 \title[Recursive Computation with Finite-Mixture Count Distributions]{Recursive Computation of Compound Random Variables with a Finite-Mixture Count Distribution}
@@ -862,6 +865,120 @@ $\sum_{k=0}^{\infty} k \cdot \dfrac{e^{-\lambda_i}\,\lambda_i^k}{k!} = \lambda_i
 So, by substitution we have $E[N^{(s)}] = \beta_1^{(s)}\lambda_1 + \beta_2^{(s)}\lambda_2$.
 \qedhere
 \end{proof}
+
+\begin{proposition}\label{prop:not-panjer}
+The probability mass function
+$P(N = n) = \beta_1 \cdot \dfrac{e^{-\lambda_1}\lambda_1^n}{n!}
+           + \beta_2 \cdot \dfrac{e^{-\lambda_2}\lambda_2^n}{n!}$
+is not a member of the Panjer class.
+\end{proposition}
+
+\begin{proof}
+Suppose for a contradiction that
+$P(N = n) = \beta_1 \cdot \dfrac{e^{-\lambda_1}\lambda_1^n}{n!}
+           + \beta_2 \cdot \dfrac{e^{-\lambda_2}\lambda_2^n}{n!}$
+is a member of the Panjer class.  Therefore, the function must satisfy the Panjer
+recurrence relation,
+\[
+    P(N = n) = \left(a + \frac{b}{n}\right) \cdot P(N = n-1),
+    \qquad n \in \mathbb{Z},\; n > 0,\; a, b \text{ are constants.}
+\]
+So,
+\[
+    \frac{P(N = n)}{P(N = n-1)} = \left(a + \frac{b}{n}\right),
+    \qquad \forall\, n \in \mathbb{Z} \text{ where } n > 0,\; a, b \text{ are constants.}
+\]
+Then,
+\[
+    \frac{\displaystyle\beta_1 \cdot \frac{e^{-\lambda_1}\lambda_1^n}{n!}
+        + \beta_2 \cdot \frac{e^{-\lambda_2}\lambda_2^n}{n!}}%
+     {\displaystyle\beta_1 \cdot \frac{e^{-\lambda_1}\lambda_1^{n-1}}{(n-1)!}
+        + \beta_2 \cdot \frac{e^{-\lambda_2}\lambda_2^{n-1}}{(n-1)!}}
+    = \left(a + \frac{b}{n}\right),
+    \qquad \forall\, n \in \mathbb{Z} \text{ where } n > 0,\; a, b \text{ are constants.}
+\]
+We evaluate the ratio for $n = 1$, $n = 2$, $n = 3$, and $n = 4$.
+Let $\beta_1 = 0.5$, $\beta_2 = 0.5$, $\lambda_1 = 1$, $\lambda_2 = 2$.
+
+When $n = 1$ we have,
+\begin{align*}
+    &= \frac{e^{-1} + e^{-2} \cdot 2}{e^{-1} + e^{-2}}
+     = (a + b),
+     \qquad \text{where } a, b \text{ are constants,}\\
+    &= \frac{e + 2}{e + 1} = a + b,
+     \qquad \text{where } a, b \text{ are constants.}
+\end{align*}
+When $n = 2$ we have,
+\begin{align*}
+    &= \frac{\dfrac{e^{-1}}{2} + \dfrac{e^{-2} \cdot 4}{2}}{e^{-1} + e^{-2} \cdot 2}
+     = \frac{2a + b}{2},
+     \qquad \text{where } a, b \text{ are constants,}\\
+    &= \frac{1}{2} \cdot \frac{e + 4}{e + 2}
+     = \frac{2a + b}{2},
+     \qquad \text{where } a, b \text{ are constants,}\\
+    &\frac{e + 4}{e + 2} = 2a + b,
+     \qquad \text{where } a, b \text{ are constants.}
+\end{align*}
+When $n = 3$ we have,
+\begin{align*}
+    &= \frac{\dfrac{e^{-1}}{6} + \dfrac{e^{-2} \cdot 8}{6}}{\dfrac{e^{-1}}{2} + \dfrac{e^{-2} \cdot 4}{2}}
+     = \frac{3a + b}{3},
+     \qquad \text{where } a, b \text{ are constants,}\\
+    &\frac{1}{3} \cdot \frac{e + 8}{e + 4} = \frac{3a + b}{3},
+     \qquad \text{where } a, b \text{ are constants,}\\
+    &\frac{e + 8}{e + 4} = 3a + b,
+     \qquad \text{where } a, b \text{ are constants.}
+\end{align*}
+Solving for $a$ we have,
+\begin{align*}
+    \frac{e + 2}{e + 1} &= a + b,\\
+    a &= \frac{e + 2}{e + 1} - b.
+\end{align*}
+Solving for $b$ we have,
+\begin{align*}
+    \frac{e + 4}{e + 2} &= 2a + b,\\
+    b &= \frac{e + 4}{e + 2} - 2a.
+\end{align*}
+And by substitution,
+\begin{align*}
+    a &= \frac{e + 2}{e + 1} - \left(\frac{e + 4}{e + 2} - 2a\right)\\
+    a &= \frac{e + 2}{e + 1} - \left(\frac{e + 4}{e + 2}\right) + 2a\\
+    a &= \frac{e + 4}{e + 2} - \frac{e + 2}{e + 1}
+       = \frac{(e^2 + 5e + 4) - (e^2 + 4e + 4)}{e^2 + 3e + 2}\\
+    a &= \frac{e}{e^2 + 3e + 2}.
+\end{align*}
+And also by substitution,
+\begin{align*}
+    b &= \frac{e + 4}{e + 2} - 2\!\left(\frac{e}{e^2 + 3e + 2}\right)\\
+    b &= \frac{e + 4}{e + 2} - \frac{2e}{(e + 1)(e + 2)}\\
+    b &= \frac{(e + 1)(e + 4) - 2e}{(e + 1)(e + 2)}\\
+    b &= \frac{e^2 + 3e + 4}{(e + 1)(e + 2)}.
+\end{align*}
+So we must have,
+\[
+    \frac{e + 8}{e + 4} = 3a + b.
+\]
+Then by substitution,
+\begin{align*}
+    \frac{e + 8}{e + 4}
+        &= \left(3 \cdot \frac{e}{e^2 + 3e + 2}
+           + \frac{e^2 + 3e + 4}{(e + 1)(e + 2)}\right)\\
+    \frac{e + 8}{e + 4}
+        &= \frac{e^2 + 6e + 4}{e^2 + 3e + 2}\\
+    e^3 + 11e^2 + 26e + 16
+        &= e^3 + 10e^2 + 28e + 16\\
+    e^2 &= 2e.
+\end{align*}
+This implies $e = 2$, which contradicts the known irrational value of $e$.
+Therefore, the Panjer recurrence relation does not hold, and
+$P(N = n) = \beta_1 \cdot \dfrac{e^{-\lambda_1}\lambda_1^n}{n!}
+           + \beta_2 \cdot \dfrac{e^{-\lambda_2}\lambda_2^n}{n!}$
+is not a member of the Panjer class.
+\qedhere
+\end{proof}
+
+Having shown that $P(N = n)$ is not in the Panjer class and is therefore not eligible for
+Panjer recursion, we will seek to apply the Pek\"{o}z and Ross method.
 
 So, we have,
 \begin{align*}
