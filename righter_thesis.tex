@@ -2011,9 +2011,55 @@ The implementation and its output can be found at
 \section{Closing Statements}
 %% ============================================================
 
-% TODO: Add closing statements / conclusion here.
-% This section should summarize the main contributions of the thesis,
-% discuss limitations, and suggest directions for future work.
+\subsection{Overview of Contributions}
+
+The primary contribution of this thesis is the extension of the Pek\"{o}z-Ross identity to the
+case of finite mixtures of $(a, b, 0)$ class distributions. Corollary~3 derives a more general
+form of the recursive expression for calculating compound random variables. Furthermore,
+this corollary provides a closed-form formula for the recursive mixture weights, bypassing
+the need for nested recursion. This allows the framework to calculate the single-distribution
+examples in the Pek\"{o}z and Ross 2004 paper, as well as complex counting distributions
+made up of finite mixtures of the $(a, b, 0)$ class.
+
+Panjer (1981) and Sundt \& Jewell (1981) established the $(a, b, 0)$ class using direct
+recurrence, and Willmot (1993) extended the recurrence to continuous mixtures. However,
+those continuous mixtures ultimately collapse into a single marginal distribution (like the
+Negative Binomial). The finite mixture counting distributions introduced in this thesis
+maintain the structural integrity of distinct subsets, such as higher-risk versus lower-risk
+insurance groups.
+
+The technique offers a unified recursive method regardless of which single $(a, b, 0)$ class
+counting distribution is chosen or finite mixtures of $(a, b, 0)$ class distributions. This
+reduces some of the complexity associated with manual computation of probabilities. While
+the method does not introduce a computational advantage over existing convolutional
+techniques, computation times associated with this recursive method are at parity with
+existing methods.
+
+\subsection{Applications and Future Work}
+
+The primary value of the finite mixture framework lies in its ability to model genuine
+population subgroups in the counting distribution of compound random variables. While
+prior work often assumes a homogeneous counting distribution for mathematical
+convenience, real-world data, particularly in insurance and telecommunications, is rarely
+so uniform.
+
+A clear application is aggregate loss modeling. For example, a car insurance portfolio is
+naturally composed of distinct subgroups. These might include a `low risk group' modeled
+with the Poisson distribution using a small $\lambda$, and a `high risk group' modeled with
+a Poisson distribution using a large $\lambda$. This method provides a recursive tool for
+calculating the risk probability while maintaining that population segmentation throughout
+the calculations. The same pattern is applicable in other domains such as healthcare,
+where one might segment patient populations, or telecommunications networks, where one
+might segment traffic groups. In each of these cases, modeling the structure of the
+underlying subgroups with finite mixtures can yield a more accurate probability model.
+
+There are several promising possibilities for future research in this area. Because the
+finite mixture framework is currently limited to $(a, b, 0)$ class counting distributions, a
+natural next step would be extending the technique to the $(a, b, 1)$ class. Furthermore,
+this research did not evaluate numerical resilience at extremely high values of $k$ or with
+a massive number of mixture components. It is entirely possible that this recursive
+technique offers a numerical stability advantage over conventional convolution methods at
+larger scales.
 
 \newpage
 %% ============================================================
