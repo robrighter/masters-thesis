@@ -250,7 +250,7 @@ explore the case where the counting distribution is a finite mixture.
 \begin{definition}
 The expected value of a discrete random variable, $X$, is denoted by $E(X)$, and given by
 \[
-    E[X] = \sum_{x=1}^{\infty} x \cdot f(x),
+    E[X] = \sum_{\{x\,:\,f(x)>0\}} x \cdot f(x),
 \]
 where $f(x)$ is the probability mass function of $X$.
 \end{definition}
