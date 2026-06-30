@@ -1411,13 +1411,13 @@ Let $s \in \mathbb{Z}$ with $0 \leq s$, and let $s$ represent the level of recur
 Let $N^{(s)}$ be a mixed random variable of Poisson, Binomial, or Negative Binomial
 distribution at recursion level $s$ with probability mass function:
 \[
-    P^{(s)}(N = n) = \sum_{j=1}^{t} \beta_j^{(s)}\, P_{r_j}(N^{(s)} = n), \qquad n \geq 0,
+    P^{(s)}(N = n) = \sum_{j=1}^{t} \beta_j^{(s)}\, P_{r_j}^{(s+1)}(N = n), \qquad n \geq 0,
 \]
 where $\sum_{j=1}^{t}\beta_j^{(s)} = 1$.  Let $M^{(s)}$ be the random variable satisfying the
 compound identity condition associated with $N^{(s)}$.  We claim that for all $s \geq 0$:
 \begin{enumerate}
 \item $E[N^{(s)}] = \displaystyle\sum_{j=1}^{t} \beta_j^{(s)}\, E[N_j^{(s)}].$
-\item The distribution of $M^{(s)} - 1$ is identical to the distribution of $N^{(s+1)}$,
+\item The distribution of $M^{(s)} - 1$ is identical to the distribution of $N$ in $P^{(s+1)}(N=n)$, also denoted $N^{(s+1)}$,
       where the new weights are updated such that
       \[
           \beta_j^{(s+1)} = \beta_j^{(s)} \cdot
@@ -1431,7 +1431,7 @@ compound identity condition associated with $N^{(s)}$.  We claim that for all $s
 compute the expected value of $E[N^{(0)}]$:
 \begin{align*}
 E[N^{(0)}]
-    &= \sum_{n=0}^{\infty} n \cdot \left[\sum_{j=1}^{t}\beta_j^{(0)}\,P_{r_j}(n)\right]
+    &= \sum_{n=0}^{\infty} n \cdot \left[\sum_{j=1}^{t}\beta_j^{(0)}\,P_{r_j}^{(0)}(n)\right]
      = \sum_{j=1}^{t}\beta_j^{(0)}\,E[N_j^{(0)}].
 \end{align*}
 Thus, Claim~1 holds for case $s = 0$.
@@ -1440,30 +1440,30 @@ Next, we apply the compound random identity and see that,
 \begin{align*}
 P(M^{(0)} - 1 = n)
     &= P(M^{(0)} = n+1)
-     = \frac{(n+1)\,P(N^{(0)} = n+1)}{E[N^{(0)}]} \\
+     = \frac{(n+1)\,P^{(0)}(N = n+1)}{E[N^{(0)}]} \\
     &= \frac{1}{E[N^{(0)}]}
-       \sum_{j=1}^{t}\beta_j^{(0)}\!\left[(n+1)\cdot P_{r_j}(N^{(0)} = n+1)\right].
+       \sum_{j=1}^{t}\beta_j^{(0)}\!\left[(n+1)\cdot P_{r_j}^{(0)}(N = n+1)\right].
 \end{align*}
 For each component distribution, the compound identity shifts the parameter by one level of
-recursion.  For the negative binomial distribution,
+recursion.  For the negative binomial distribution $r'$ becomes $r+1$,
 \[
-    (n+1)\,P_r(N^(s) = n+1) = E[N]\, P_{r+s}(N^(s+1) = n);
+    (n+1)\,P_r^{(s)}(N = n+1) = E[N_{j}^{(s)}]\, P_{r'}^{(s+1)}(N = n);
 \]
-for the binomial distribution,
+for the binomial distribution $r'$ becomes $r-1$,
 \[
-    (n+1)\,P_r(N^(s) = n+1) = E[N]\, P_{r-s}(N^(s+1) = n);
+    (n+1)\,P_r^{(s)}(N = n+1) = E[N_{j}^{(s)}]\, P_{r'}^{(s+1)}(N = n);
 \]
-and for the Poisson distribution the parameter is unchanged,
+and for the Poisson distribution the parameter is unchanged,  $r'= r$, ,
 \[
-    (n+1)\,P_r(N^(s) = n+1) = E[N]\, P_{r+0}(N^(s+1) = n).
+    (n+1)\,P_r^{(s)}(N = n+1) = E[N_{j}^{(s)}]\, P_{r'}^{(s+1)}(N = n).
 \]
 Substituting the appropriate identity for each component, we have
 \begin{align*}
 P(M^{(0)} - 1 = n)
     &= \frac{1}{E[N^{(0)}]}
-       \sum_{j=1}^{t}\beta_j^{(0)}\, E[N_j^{(0)}] \cdot P_{r_j}(N^{(1)} = n) \\
+       \sum_{j=1}^{t}\beta_j^{(0)}\, E[N_j^{(0)}] \cdot P_{r_j}^{(1)}(N = n) \\
     &= \sum_{j=1}^{t}
-       \frac{\beta_j^{(0)}\, E[N_j^{(0)}]}{E[N^{(0)}]} \cdot P_{r_j}(N^{(1)} = n),
+       \frac{\beta_j^{(0)}\, E[N_j^{(0)}]}{E[N^{(0)}]} \cdot P_{r_j}^{(1)}(N = n),
 \end{align*}
 where $P_{r_j}(N^{(1)} = n)$ denotes the $j$th component advanced to level $1$ (parameter
 $r_j + 1$ for negative binomial, $r_j - 1$ for binomial, and unchanged for Poisson).
@@ -1476,10 +1476,10 @@ Thus, the claim holds for $s = 0$.
 \textit{Inductive Step}: Assume the statement is true for $s = k$.  That is, $M^{(k)} - 1$
 is equivalent to $N^{(k+1)}$ and $E[N^{(k)}]$ follows the claim.  We need to show the
 statement is true for $s = k + 1$.  By the inductive hypothesis, $N^{(k+1)}$ is the mixture
-$\sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)$, so we have,
+$\sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)$, so by linearity of expectation,
 \[
     E[N^{(k+1)}]
-    = \sum_{n=0}^{\infty} n \sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)
+    = \sum_{n=0}^{\infty} n \sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}^{(k+1)}(N = n)
     = \sum_{j=1}^{t}\beta_j^{(k+1)}\,E[N_j^{(k+1)}],
 \]
 which confirms Claim~1 for $s = k+1$.  Next, we determine the distribution of
@@ -1487,7 +1487,7 @@ $M^{(k+1)} - 1$.  We have,
 \begin{align*}
 P(M^{(k+1)} - 1 = n)
     &= P(M^{(k+1)} = n+1)
-     = \frac{(n+1)\,P(N^{(k+1)} = n+1)}{E[N^{(k+1)}]} \\
+     = \frac{(n+1)\,P^{(k+1)}(N = n+1)}{E[N^{(k+1)}]} \\
     &= \frac{1}{E[N^{(k+1)}]}
        \sum_{j=1}^{t}\beta_j^{(k+1)}\!\left[(n+1)\cdot P_{r_j}(N^{(k+1)} = n+1)\right].
 \end{align*}
@@ -1496,9 +1496,9 @@ component from level $k+1$ to level $k+2$, we have
 \begin{align*}
 P(M^{(k+1)} - 1 = n)
     &= \frac{1}{E[N^{(k+1)}]}
-       \sum_{j=1}^{t}\beta_j^{(k+1)}\, E[N_j^{(k+1)}] \cdot P_{r_j}(N^{(k+2)} = n) \\
+       \sum_{j=1}^{t}\beta_j^{(k+1)}\, E[N_j^{(k+1)}] \cdot P_{r_j}^{(k+2)}(N = n) \\
     &= \sum_{j=1}^{t}
-       \frac{\beta_j^{(k+1)}\, E[N_j^{(k+1)}]}{E[N^{(k+1)}]} \cdot P_{r_j}(N^{(k+2)} = n).
+       \frac{\beta_j^{(k+1)}\, E[N_j^{(k+1)}]}{E[N^{(k+1)}]} \cdot P_{r_j}^{(k+2)}(N = n).
 \end{align*}
 This expression is exactly the PMF for $N^{(k+2)}$ with updated weights
 $\beta_j^{(k+2)} = \dfrac{\beta_j^{(k+1)}\, E[N_j^{(k+1)}]}{E[N^{(k+1)}]}$, as desired.
