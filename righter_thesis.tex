@@ -1426,6 +1426,7 @@ compound identity condition associated with $N^{(s)}$.  We claim that for all $s
 \end{corollary}
 
 \begin{proof}[Proof (by induction)]
+
 \textit{Base Case} $(s = 0)$: For $s = 0$, the weights are $\beta_i$.  First, we compute
 the expected value of $E[N^{(0)}]$:
 \begin{align*}
@@ -1485,6 +1486,19 @@ P(M^{(k+1)} - 1 = n)
     &= P(M^{(k+1)} = n+1)
      = \frac{(n+1)\,P(N^{(k+1)} = n+1)}{E[N^{(k+1)}]}.
 \end{align*}
+
+First, we compute $E[N^{(k+1)}]$.  Since $N^{(k+1)}$ is the mixture
+$\sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)$, linearity of expectation gives
+\[
+    E[N^{(k+1)}]
+    = \sum_{n=0}^{\infty} n \sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)
+    = \sum_{j=1}^{t}\beta_j^{(k+1)}\,E[N_j^{(k+1)}],
+\]
+which confirms Claim~1 for $s = k+1$.
+
+Next, we substitute this into the probability
+expression:
+
 Substituting the mixture sum for $N^{(k+1)}$,
 \begin{align*}
 P(M^{(k+1)} - 1 = n)
@@ -1529,7 +1543,7 @@ we arrive at the updated recursive equation
     P^{(s)}(S_N = k)
     = \frac{E[N^{(s)}]}{k} \cdot \sum_{i=1}^{k} i\,\alpha_i \cdot P^{(s+1)}(S_N = k - i),
 \]
-where $E[N^{(s)}] = \sum_{j=1}^{t}\beta_j^{(s)}\,E[N_j^{(0)}]$ and the computation of
+where $E[N^{(s)}] = \sum_{j=1}^{t}\beta_j^{(s)}\,E[N_j^{(s)}]$ and the computation of
 $P^{(s+1)}$ uses $\beta^{(s+1)}$ and parameters appropriate to the distribution of $P_i$,
 that is, $(r - s)$ for the binomial distribution, $(r + s)$ for the negative binomial
 distribution and no parameter change for the Poisson distribution.
