@@ -91,7 +91,7 @@
 \vspace{0.14\textheight}
 {\Large Robert Righter\par}
 \vspace{0.10\textheight}
-{\Large March 2026\par}
+{\Large June 2026\par}
 \vspace{0.8em}
 {\Large Master's Thesis\par}
 \vspace{0.8em}
@@ -411,11 +411,12 @@ Find $P(S_N = 4)$.
 \begin{example}[N in the Poisson Distribution]\label{ex:poisson}
 \addcontentsline{toc}{subsection}{Example~\theexample: N in the Poisson Distribution}
 Let $N$ be a random variable of the Poisson distribution with parameter $\lambda = 3$.
-So the probability mass function for the distribution of $N$ is
+So the probability mass function for the distribution of $N^{(s)}$ at recursion level $s$ is
 \[
     P^{(s)}(N = n) = \frac{e^{-\lambda}\,\lambda^n}{n!}, \qquad n = 0, 1, 2, \ldots
 \]
-We claim that $E[N^{(s)}] = \lambda$.
+We claim that $E[N^{(s)}] = \lambda$, where $E[N^{(s)}]$ is the expected value of the
+distribution of $N$ at the level of recursion $s$.
 
 \begin{proof}
 \begin{align*}
@@ -1407,12 +1408,12 @@ distributions.
 \begin{corollary}[Recursive Properties of the Finite Mixture Distributions]
 \label{cor:general}
 Let $s \in \mathbb{Z}$ with $0 \leq s$, and let $s$ represent the level of recursion.
-Let $N^{(s)}$ be a mixed random variable of Binomial or Negative Binomial distribution at
-recursion level $s$ with probability mass function:
+Let $N^{(s)}$ be a mixed random variable of Poisson, Binomial, or Negative Binomial
+distribution at recursion level $s$ with probability mass function:
 \[
     P^{(s)}(N = n) = \sum_{j=1}^{t} \beta_j^{(s)}\, P_{r_j}(N^{(s)} = n), \qquad n \geq 0,
 \]
-where $\sum_{i=1}^{t}\beta_i = 1$.  Let $M^{(s)}$ be the random variable satisfying the
+where $\sum_{j=1}^{t}\beta_j^{(s)} = 1$.  Let $M^{(s)}$ be the random variable satisfying the
 compound identity condition associated with $N^{(s)}$.  We claim that for all $s \geq 0$:
 \begin{enumerate}
 \item $E[N^{(s)}] = \displaystyle\sum_{j=1}^{t} \beta_j^{(s)}\, E[N_j^{(s)}].$
@@ -1426,9 +1427,8 @@ compound identity condition associated with $N^{(s)}$.  We claim that for all $s
 \end{corollary}
 
 \begin{proof}[Proof (by induction)]
-
-\textit{Base Case} $(s = 0)$: For $s = 0$, the weights are $\beta_i$.  First, we compute
-the expected value of $E[N^{(0)}]$:
+\textit{Base Case} $(s = 0)$: For $s = 0$, the weights are $\beta_j^{(0)}$.  First, we
+compute the expected value of $E[N^{(0)}]$:
 \begin{align*}
 E[N^{(0)}]
     &= \sum_{n=0}^{\infty} n \cdot \left[\sum_{j=1}^{t}\beta_j^{(0)}\,P_{r_j}(n)\right]
@@ -1441,92 +1441,67 @@ Next, we apply the compound random identity and see that,
 P(M^{(0)} - 1 = n)
     &= P(M^{(0)} = n+1)
      = \frac{(n+1)\,P(N^{(0)} = n+1)}{E[N^{(0)}]} \\
-    &= \frac{(n+1)\!\left[\sum_{j=1}^{t}\beta_j^{(0)}\,P_{r_j}(N^{(0)} = n+1)\right]}
-      {E[N^{(0)}]} \\
     &= \frac{1}{E[N^{(0)}]}
        \sum_{j=1}^{t}\beta_j^{(0)}\!\left[(n+1)\cdot P_{r_j}(N^{(0)} = n+1)\right].
 \end{align*}
-Notice that for the negative binomial distribution,
-$P^{(s)}(M^{(s)} - 1 = n) = P^{(s+1)}(N = n)$ implies
+For each component distribution, the compound identity shifts the parameter by one level of
+recursion.  For the negative binomial distribution,
 \[
-    (n+1)\,P_r(N = n+1) = E[N]\, P_{r+1}(N = n).
+    (n+1)\,P_r(N = n+1) = E[N]\, P_{r+1}(N = n);
 \]
-So by substitution we have,
+for the binomial distribution,
+\[
+    (n+1)\,P_r(N = n+1) = E[N]\, P_{r-1}(N = n);
+\]
+and for the Poisson distribution the parameter is unchanged,
+\[
+    (n+1)\,P_\lambda(N = n+1) = E[N]\, P_\lambda(N = n).
+\]
+Substituting the appropriate identity for each component, we have
 \begin{align*}
 P(M^{(0)} - 1 = n)
     &= \frac{1}{E[N^{(0)}]}
-       \sum_{j=1}^{t}\beta_j^{(0)}\, E[N_j^{(0)}] \cdot P_{r_j+1}(N^{(1)} = n) \\
+       \sum_{j=1}^{t}\beta_j^{(0)}\, E[N_j^{(0)}] \cdot P_{r_j}(N^{(1)} = n) \\
     &= \sum_{j=1}^{t}
-       \frac{\beta_j\, E[N_j^{(0)}]}{E[N^{(0)}]} \cdot P_{r_j+1}(N^{(1)} = n).
+       \frac{\beta_j^{(0)}\, E[N_j^{(0)}]}{E[N^{(0)}]} \cdot P_{r_j}(N^{(1)} = n),
 \end{align*}
-Similarly, for the binomial distribution,
-$P^{(s)}(M^{(s)} - 1 = n) = P^{(s+1)}(N = n)$ implies
-\[
-    (n+1)\,P_r(N = n+1) = E[N]\, P_{r-1}(N = n).
-\]
-So by substitution we have,
-\begin{align*}
-P(M^{(0)} - 1 = n)
-    &= \frac{1}{E[N^{(0)}]}
-       \sum_{j=1}^{t}\beta_j^{(0)}\, E[N_j^{(0)}] \cdot P_{r_j-1}(N^{(1)} = n) \\
-    &= \sum_{j=1}^{t}
-       \frac{\beta_j\, E[N_j^{(0)}]}{E[N^{(0)}]} \cdot P_{r_j-1}(N^{(1)} = n).
-\end{align*}
-These match the definition of $N^{(1)}$, a mixture with shifted parameters according to
-the distribution.  Thus, the claim holds for $s = 0$.
+where $P_{r_j}(N^{(1)} = n)$ denotes the $j$th component advanced to level $1$ (parameter
+$r_j + 1$ for negative binomial, $r_j - 1$ for binomial, and unchanged for Poisson).
+Defining $\beta_j^{(1)} = \dfrac{\beta_j^{(0)}\, E[N_j^{(0)}]}{E[N^{(0)}]}$, this is exactly
+the mixture $P^{(1)}(N = n)$, and the new weights sum to one since
+$\sum_{j=1}^{t}\beta_j^{(1)} = \frac{1}{E[N^{(0)}]}\sum_{j=1}^{t}\beta_j^{(0)}\,E[N_j^{(0)}] = 1$.
+Thus, the claim holds for $s = 0$.
 
 \medskip
 \textit{Inductive Step}: Assume the statement is true for $s = k$.  That is, $M^{(k)} - 1$
 is equivalent to $N^{(k+1)}$ and $E[N^{(k)}]$ follows the claim.  We need to show the
-statement is true for $s = k + 1$.  We must determine the distribution of $M^{(k+1)} - 1$.
-
-We have,
-\begin{align*}
-P(M^{(k+1)} - 1 = n)
-    &= P(M^{(k+1)} = n+1)
-     = \frac{(n+1)\,P(N^{(k+1)} = n+1)}{E[N^{(k+1)}]}.
-\end{align*}
-
-First, we compute $E[N^{(k+1)}]$.  Since $N^{(k+1)}$ is the mixture
-$\sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)$, linearity of expectation gives
+statement is true for $s = k + 1$.  By the inductive hypothesis, $N^{(k+1)}$ is the mixture
+$\sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)$, so by linearity of expectation,
 \[
     E[N^{(k+1)}]
     = \sum_{n=0}^{\infty} n \sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)
     = \sum_{j=1}^{t}\beta_j^{(k+1)}\,E[N_j^{(k+1)}],
 \]
-which confirms Claim~1 for $s = k+1$.
-
-Next, we substitute this into the probability
-expression:
-
-Substituting the mixture sum for $N^{(k+1)}$,
+which confirms Claim~1 for $s = k+1$.  Next, we determine the distribution of
+$M^{(k+1)} - 1$.  We have,
 \begin{align*}
 P(M^{(k+1)} - 1 = n)
+    &= P(M^{(k+1)} = n+1)
+     = \frac{(n+1)\,P(N^{(k+1)} = n+1)}{E[N^{(k+1)}]} \\
     &= \frac{1}{E[N^{(k+1)}]}
-       \sum_{j=1}^{t}\beta_j^{(k+1)}
-       \!\left[(n+1)\cdot P_{r_j+(k+1)}(N^{(0)} = n+1)\right].
+       \sum_{j=1}^{t}\beta_j^{(k+1)}\!\left[(n+1)\cdot P_{r_j}(N^{(k+1)} = n+1)\right].
 \end{align*}
-So, for the negative binomial distribution, by substitution we have,
+Applying the same per-component shift identity used in the base case, now advancing each
+component from level $k+1$ to level $k+2$, we have
 \begin{align*}
 P(M^{(k+1)} - 1 = n)
     &= \frac{1}{E[N^{(k+1)}]}
-       \sum_{j=1}^{t}\beta_j^{(k+1)}\, E[N_j^{(k+1)}]
-       \cdot P_{r_j+k+2}(N^{(1)} = n) \\
+       \sum_{j=1}^{t}\beta_j^{(k+1)}\, E[N_j^{(k+1)}] \cdot P_{r_j}(N^{(k+2)} = n) \\
     &= \sum_{j=1}^{t}
-       \frac{\beta_j^{k+1}\, E[N_j^{(k+1)}]}{E[N^{(k+1)}]}
-       \cdot P_{r_j+k+2}(N^{(1)} = n).
+       \frac{\beta_j^{(k+1)}\, E[N_j^{(k+1)}]}{E[N^{(k+1)}]} \cdot P_{r_j}(N^{(k+2)} = n).
 \end{align*}
-Similarly, for the binomial distribution, by substitution we have,
-\begin{align*}
-P(M^{(k+1)} - 1 = n)
-    &= \frac{1}{E[N^{(k+1)}]}
-       \sum_{j=1}^{t}\beta_j^{(k+1)}\, E[N_j^{(k+1)}]
-       \cdot P_{r_j-(k+2)}(N^{(1)} = n) \\
-    &= \sum_{j=1}^{t}
-       \frac{\beta_j^{k+1}\, E[N_j^{(k+1)}]}{E[N^{(k+1)}]}
-       \cdot P_{r_j-(k+2)}(N^{(1)} = n).
-\end{align*}
-This expression is exactly the PMF for $N^{(k+2)}$ with weights $\beta_j^{k+1}$ as desired.
+This expression is exactly the PMF for $N^{(k+2)}$ with updated weights
+$\beta_j^{(k+2)} = \dfrac{\beta_j^{(k+1)}\, E[N_j^{(k+1)}]}{E[N^{(k+1)}]}$, as desired.
 
 So, by the principle of mathematical induction, for all $s \in \mathbb{N}$, the compound
 identity variable associated with $N^{(s)}$ shifts the distribution to $N^{(s+1)}$, and
