@@ -1445,18 +1445,13 @@ P(M^{(0)} - 1 = n)
        \sum_{j=1}^{t}\beta_j^{(0)}\!\left[(n+1)\cdot P_{r_j}^{(0)}(N = n+1)\right].
 \end{align*}
 For each component distribution, the compound identity shifts the parameter by one level of
-recursion.  For the negative binomial distribution $r'$ becomes $r+1$,
+recursion. So given the expression, 
 \[
-    (n+1)\,P_r^{(s)}(N = n+1) = E[N_{j}^{(s)}]\, P_{r'}^{(s+1)}(N = n);
+    (n+1)\,P_r^{(s)}(N = n+1) = E[N_{j}^{(s)}]\, P_{r'}^{(s+1)}(N = n)
 \]
-for the binomial distribution $r'$ becomes $r-1$,
-\[
-    (n+1)\,P_r^{(s)}(N = n+1) = E[N_{j}^{(s)}]\, P_{r'}^{(s+1)}(N = n);
-\]
-and for the Poisson distribution the parameter is unchanged,  $r'= r$, ,
-\[
-    (n+1)\,P_r^{(s)}(N = n+1) = E[N_{j}^{(s)}]\, P_{r'}^{(s+1)}(N = n).
-\]
+For the negative binomial distribution case $r'$ becomes $r+1$, in the binomial distribution case $r'$ becomes $r-1$ while,
+for the Poisson distribution the parameter is unchanged, that is,  $r'= r$.
+
 Substituting the appropriate identity for each component, we have
 \begin{align*}
 P(M^{(0)} - 1 = n)
@@ -1476,7 +1471,7 @@ Thus, the claim holds for $s = 0$.
 \textit{Inductive Step}: Assume the statement is true for $s = k$.  That is, $M^{(k)} - 1$
 is equivalent to $N^{(k+1)}$ and $E[N^{(k)}]$ follows the claim.  We need to show the
 statement is true for $s = k + 1$.  By the inductive hypothesis, $N^{(k+1)}$ is the mixture
-$\sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)$, so by linearity of expectation,
+$\sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)$, so we have,
 \[
     E[N^{(k+1)}]
     = \sum_{n=0}^{\infty} n \sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}^{(k+1)}(N = n)
