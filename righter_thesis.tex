@@ -1431,7 +1431,7 @@ compound identity condition associated with $N^{(s)}$.  We claim that for all $s
 compute the expected value of $E[N^{(0)}]$:
 \begin{align*}
 E[N^{(0)}]
-    &= \sum_{n=0}^{\infty} n \cdot \left[\sum_{j=1}^{t}\beta_j^{(0)}\,P_{r_j}^{(0)}(n)\right]
+    &= \sum_{n=0}^{\infty} n \cdot \left[\sum_{j=1}^{t}\beta_j^{(0)}\,P_{r_j}^{(0)}(N=n)\right]
      = \sum_{j=1}^{t}\beta_j^{(0)}\,E[N_j^{(0)}].
 \end{align*}
 Thus, Claim~1 holds for case $s = 0$.
@@ -1468,9 +1468,10 @@ $\sum_{j=1}^{t}\beta_j^{(1)} = \frac{1}{E[N^{(0)}]}\sum_{j=1}^{t}\beta_j^{(0)}\,
 Thus, the claim holds for $s = 0$.
 
 \medskip
-\textit{Inductive Step}: Assume the statement is true for $s = k$.  That is, $M^{(k)} - 1$
-is equivalent to $N^{(k+1)}$ and $E[N^{(k)}]$ follows the claim.  We need to show the
-statement is true for $s = k + 1$.  By the inductive hypothesis, $N^{(k+1)}$ is the mixture
+\textit{Inductive Step}: Assume the statement is true for $s = k$.  That is, the distribution
+of $M^{(k)} - 1$ is equivalent to the distribution of $N^{(k+1)}$ and $E[N^{(k)}]$ follows the
+claim.  We need to show the statement is true for $s = k + 1$.  By the inductive hypothesis,
+the distribution of $N^{(k+1)}$ has the probability mass function of the mixture
 $\sum_{j=1}^{t}\beta_j^{(k+1)}\,P_{r_j}(N^{(k+1)} = n)$, so we have,
 \[
     E[N^{(k+1)}]
